@@ -1,0 +1,1 @@
+export { ThreeDPage } from "./3d";

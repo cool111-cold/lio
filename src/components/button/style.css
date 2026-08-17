@@ -1,0 +1,15 @@
+.button {
+    padding: 12px 6px 12px 6px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: all ease 0.3s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+
+.button:active {
+    transform: scale(0.9);
+}
