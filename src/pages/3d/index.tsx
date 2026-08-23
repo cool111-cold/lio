@@ -13,11 +13,11 @@ import cubeBackgroundImg8 from '../../assets/img/8.jpg'
 
 const FACE_IMAGES: Record<CubeFace, string> = {
     right: cubeBackgroundImg7,
-    left: cubeBackgroundImg3,
-    top: cubeBackgroundImg4,
-    bottom: cubeBackgroundImg5,
+    left: cubeBackgroundImg4,
+    top: cubeBackgroundImg3,
+    bottom: cubeBackgroundImg8,
     front: cubeBackgroundImg,
-    back: cubeBackgroundImg8,
+    back: cubeBackgroundImg5,
 }
 
 const FACE_IMAGE_URLS = Array.from(new Set(Object.values(FACE_IMAGES)))
@@ -61,7 +61,7 @@ export const ThreeDPage = () => {
                 />
             </div>
             {!alignedFace && <TextComponent index={index} />}
-            {!alignedFace && <SlideComponent />} 
+            {/* {!alignedFace && <SlideComponent />}  */}
             {/* первый слайд */}
         </PageComponent>
     )

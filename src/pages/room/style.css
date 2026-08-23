@@ -1,0 +1,77 @@
+@keyframes slides-enter {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slides-enter {
+    animation: slides-enter 3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.song-cover-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.song-cover {
+    width: 20vh;
+    height: 20vh;
+    flex-shrink: 0;
+    object-fit: cover;
+    background-color: #222;
+    border-radius: 12px;
+    transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+    will-change: transform;
+}
+
+.song-cover-wrapper:hover .song-cover {
+    transform: scale(1.05) translateY(-8px);
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    position: relative;
+}
+
+.song-cover-title {
+    margin-top: 4px;
+    max-width: 20vh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    pointer-events: none;
+}
+
+.song-cover-subtitle {
+    margin-top: 0px;
+    max-width: 20vh;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+    pointer-events: none;
+}
+
+.song-cover-title p,
+.song-cover-subtitle p {
+    margin: 0;
+    font-size: 16px !important;
+    line-height: 1.2;
+}
+
+.song-cover-wrapper:hover .song-cover-title,
+.song-cover-wrapper:hover .song-cover-subtitle {
+    opacity: 1;
+    transform: translateY(0);
+}

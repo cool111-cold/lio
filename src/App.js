@@ -1,10 +1,11 @@
 import './App.css';
 
-import { ThreeDPage } from './pages';
+import { ThreeDPage, RoomPage } from './pages';
 
 function App() {
   return (
-    <ThreeDPage />
+    <RoomPage />
+    // <ThreeDPage />
   );
 }
 

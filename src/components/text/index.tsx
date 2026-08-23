@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { TextAnimate } from 'react-text-animator';
 
 
-type Size = 's' | 'm' | 'l' | 'xl';
+type Size = 'xs' | 's' | 'm' | 'l' | 'xl';
 
 interface TextProps {
     children: string;
-    color?: 'white' | 'dark';
+    color?: 'white' | 'dark' | 'gray' | 'lightGray';
     size?: Size;
     animation?: boolean
 }
 
 const Sizes = {
+    'xs': -5,
     's': 5,
     'm': 10,
     'l': 15,
@@ -22,7 +23,9 @@ const Sizes = {
 
 const Colors = {
     'white': colors.white,
-    'dark': colors.black
+    'dark': colors.black,
+    'gray': colors.gray,
+    'lightGray': colors.lightGray
 }
 
 
@@ -30,8 +33,6 @@ const Colors = {
 export const Text = ({children, color = 'white', size = 'm', animation}: TextProps) => {
     const width = window.innerWidth;
     const headth = window.innerHeight;
-
-    console.log(width / 100 + headth / 100)
 
     const localStyles = {
         color: Colors[color],
