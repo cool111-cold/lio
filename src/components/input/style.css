@@ -1,0 +1,56 @@
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.input-label {
+    padding-left: 2px;
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(192, 192, 192, 0.35);
+    background: var(--lio-input-bg, transparent);
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+
+.input-wrapper:focus-within {
+    border-color: #A8E10C;
+}
+
+.input-wrapper-error {
+    border-color: #A8E10C;
+}
+
+.input-field {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--lio-text, inherit);
+    font-size: 15px;
+    padding: 13px 0;
+}
+
+.input-field::placeholder {
+    color: #c0c0c0;
+    opacity: 0.8;
+}
+
+.input-toggle {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px 0;
+    flex-shrink: 0;
+}

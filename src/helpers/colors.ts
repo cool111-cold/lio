@@ -7,4 +7,9 @@ export const colors = {
     background: '#000000',
     text: '#ffffff',
     cubeText: '#f9f9f9',
+
+    bgLight: '#f7f7f7',
+    bgDark: '#1e1e1e',
+    secondary: '#c0c0c0',
+    accent: '#A8E10C',
 } as const

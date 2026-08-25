@@ -1,0 +1,42 @@
+.saro-pdf-viewer {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+.saro-pdf-viewer-scroll {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.saro-pdf-page {
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    flex-shrink: 0;
+}
+
+.saro-pdf-page canvas {
+    display: block;
+}
+
+.saro-pdf-viewer-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--lio-bg);
+    z-index: 1;
+}
+
+.saro-pdf-highlight {
+    background: rgba(168, 225, 12, 0.45) !important;
+    border-radius: 2px;
+}
