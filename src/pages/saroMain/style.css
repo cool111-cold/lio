@@ -33,6 +33,16 @@
     color: var(--lio-text);
 }
 
+.icon-btn-active {
+    background: #A8E10C;
+    color: #1e1e1e;
+}
+
+.icon-btn-active:hover {
+    background: #A8E10C;
+    color: #1e1e1e;
+}
+
 /* ---- chat (left card) ---- */
 
 .saro-chat {
@@ -364,6 +374,90 @@
     gap: 8px;
 }
 
+.saro-main-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--lio-card-bg);
+    border: 1px solid rgba(192, 192, 192, 0.25);
+}
+
+.saro-main-tab {
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.saro-main-tab:hover {
+    background: var(--lio-hover-bg);
+}
+
+.saro-main-tab-active {
+    background: #A8E10C;
+}
+
+.saro-main-tab-active:hover {
+    background: #A8E10C;
+}
+
+.saro-main-chats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+}
+
+.saro-main-new-chat-btn {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 10px;
+    background: #A8E10C;
+    color: #1e1e1e;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.saro-main-new-chat-btn:active {
+    transform: scale(0.98);
+}
+
+.saro-main-chats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.saro-main-chat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid rgba(192, 192, 192, 0.3);
+    background: var(--lio-card-bg);
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.saro-main-chat-card:hover {
+    border-color: #A8E10C;
+    transform: translateY(-2px);
+}
+
+.saro-main-chat-card-active {
+    border-color: #A8E10C;
+}
+
 .saro-search-results {
     display: flex;
     flex-direction: column;
@@ -404,6 +498,11 @@
     border-color: #A8E10C;
 }
 
+.saro-search-text-card-selected {
+    border-color: #A8E10C;
+    background: rgba(168, 225, 12, 0.08);
+}
+
 .saro-search-excerpt {
     margin: 0;
     color: #c0c0c0;
@@ -419,6 +518,7 @@
 }
 
 .saro-main-file-card {
+    position: relative;
     aspect-ratio: 1 / 1;
     display: flex;
     flex-direction: column;
@@ -438,6 +538,22 @@
 .saro-main-file-card:hover {
     border-color: #A8E10C;
     transform: translateY(-2px);
+}
+
+.saro-main-file-card-selected {
+    border-color: #A8E10C;
+    background: rgba(168, 225, 12, 0.08);
+}
+
+.saro-main-file-selected-dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #A8E10C;
+    box-shadow: 0 0 0 3px rgba(168, 225, 12, 0.18);
 }
 
 .saro-main-file-icon {

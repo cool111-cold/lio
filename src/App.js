@@ -17,7 +17,15 @@ function App() {
     );
   }
 
-  return <SaroMainPage token={token} />;
+  return (
+    <SaroMainPage
+      token={token}
+      onUnauthorized={() => {
+        localStorage.removeItem('saro_token');
+        setToken(null);
+      }}
+    />
+  );
 }
 
 export default App;

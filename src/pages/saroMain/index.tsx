@@ -1,4 +1,4 @@
-import { ChangeEvent, CSSProperties, KeyboardEvent, useEffect, useMemo, useState } from "react"
+import { ChangeEvent, CSSProperties, KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react"
 import { PageComponent, Text, Input } from "../../components"
 import { IconChevronDown, IconClose, IconCopy, IconFilter, IconLink, IconPlus, IconSend, IconThumbDown, IconThumbUp } from "./components/icons"
 import { PdfViewer } from "./components/PdfViewer"
@@ -6,6 +6,7 @@ import './style.css'
 
 type Theme = 'light' | 'dark'
 type ComposerMode = 'search' | 'query'
+type SidebarTab = 'files' | 'chats'
 
 interface Message {
     id: number;
@@ -27,6 +28,7 @@ interface TextMatch {
 interface SearchResults {
     named_files: string[];
     texts: TextMatch[];
+    chat_id?: number;
 }
 
 interface DeepSearchChunk {
@@ -42,6 +44,24 @@ interface DeepSearchChunk {
 
 interface DeepSearchResponse {
     result: DeepSearchChunk[];
+    chat_id?: number;
+}
+
+interface ChatDBMessage {
+    role: 'user' | 'assistant';
+    text: unknown;
+}
+
+interface ChatSummary {
+    id: number;
+    name: string;
+}
+
+interface ChatDB extends ChatSummary {
+    id: number;
+    user_id: number;
+    name: string;
+    messages: ChatDBMessage[];
 }
 
 const API_BASE_URL = 'http://localhost:8000'
@@ -63,6 +83,79 @@ const fileFromName = (name: string): StockFile => ({
 const parseFilesResponse = (data: {message: string}): string[] => {
     const matches = data.message.match(/'([^']*)'|"([^"]*)"/g) ?? []
     return matches.map((m) => m.slice(1, -1))
+}
+
+const parseChatsResponse = (data: ChatSummary[] | {chats?: ChatSummary[]}): ChatSummary[] => {
+    if (Array.isArray(data)) return data
+    return data.chats ?? []
+}
+
+const parseChatResponse = (data: ChatDB | {chat?: ChatDB}): ChatDB | null => {
+    if ('chat' in data) return data.chat ?? null
+    if ('messages' in data) return data
+    return null
+}
+
+const isSearchResults = (value: unknown): value is SearchResults =>
+    typeof value === 'object'
+    && value !== null
+    && 'named_files' in value
+    && 'texts' in value
+
+const isDeepSearchResponse = (value: unknown): value is DeepSearchResponse =>
+    typeof value === 'object'
+    && value !== null
+    && 'result' in value
+
+const normalizeMessageText = (text: unknown): string => {
+    if (typeof text === 'string') return text
+    if (text === null || text === undefined) return ''
+
+    if (isSearchResults(text)) return getSearchSummary(text)
+
+    if (isDeepSearchResponse(text) && Array.isArray(text.result)) {
+        return text.result.map((chunk) => chunk.text).join('\n\n') || 'Ничего не найдено'
+    }
+
+    if (typeof text === 'object' && 'text' in text) {
+        return normalizeMessageText((text as {text?: unknown}).text)
+    }
+
+    return JSON.stringify(text)
+}
+
+const toMessages = (chat: ChatDB): Message[] =>
+    (chat.messages ?? []).map((message, index) => ({
+        id: Number(`${chat.id}${index}`),
+        author: message.role === 'user' ? 'user' : 'assistant',
+        text: normalizeMessageText(message.text),
+    }))
+
+const appendFilterParams = (params: URLSearchParams, filterFiles: string[]) => {
+    filterFiles.forEach((fileName) => params.append('filter', fileName))
+}
+
+const getSearchUrl = (query: string, chatId: number | null, filterFiles: string[]) => {
+    const params = new URLSearchParams({query})
+    if (chatId !== null) params.set('chat_id', String(chatId))
+    appendFilterParams(params, filterFiles)
+    return `${API_BASE_URL}/search-in-files?${params.toString()}`
+}
+
+const getDeepSearchUrl = (query: string, chatId: number | null, filterFiles: string[]) => {
+    const params = new URLSearchParams({query})
+    if (chatId !== null) params.set('chat_id', String(chatId))
+    appendFilterParams(params, filterFiles)
+    return `${API_BASE_URL}/deep-search?${params.toString()}`
+}
+
+const getSearchSummary = (data: SearchResults) => {
+    const filesCount = data.named_files?.length ?? 0
+    const textsCount = data.texts?.length ?? 0
+
+    if (filesCount === 0 && textsCount === 0) return 'Ничего не найдено'
+
+    return `Найдено: файлов по названию — ${filesCount}, совпадений в тексте — ${textsCount}`
 }
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -92,9 +185,10 @@ const ThemeSwitch = ({theme, onToggle}: {theme: Theme, onToggle: () => void}) =>
 
 interface SaroMainPageProps {
     token: string;
+    onUnauthorized?: () => void;
 }
 
-export const SaroMainPage = ({token}: SaroMainPageProps) => {
+export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
     const [messages, setMessages] = useState<Message[]>([])
     const [draft, setDraft] = useState('')
     const [theme, setTheme] = useState<Theme>('dark')
@@ -109,13 +203,44 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
     const [searching, setSearching] = useState(false)
     const [searchResults, setSearchResults] = useState<SearchResults | null>(null)
     const [querying, setQuerying] = useState(false)
+    const [chats, setChats] = useState<ChatSummary[]>([])
+    const [chatsLoading, setChatsLoading] = useState(false)
+    const [chatLoadingId, setChatLoadingId] = useState<number | null>(null)
+    const [currentChatId, setCurrentChatId] = useState<number | null>(null)
+    const [sidebarTab, setSidebarTab] = useState<SidebarTab>('files')
+    const [filterMode, setFilterMode] = useState(false)
+    const [selectedFilterFiles, setSelectedFilterFiles] = useState<string[]>([])
 
-    const fetchFiles = () =>
-        fetch(`${API_BASE_URL}/get-files-list`, {
+    const authorizedFetch = useCallback((input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, init).then((res) => {
+            if (res.status === 401) {
+                onUnauthorized?.()
+                throw new Error('Unauthorized')
+            }
+
+            return res
+        }), [onUnauthorized])
+
+    const fetchFiles = useCallback(() =>
+        authorizedFetch(`${API_BASE_URL}/get-files-list`, {
             headers: {Authorization: `Bearer ${token}`},
         })
             .then((res) => res.json())
-            .then((data: {message: string}) => parseFilesResponse(data).map(toStockFile))
+            .then((data: {message: string}) => parseFilesResponse(data).map(toStockFile)), [authorizedFetch, token])
+
+    const fetchChats = useCallback(() =>
+        authorizedFetch(`${API_BASE_URL}/get-chats`, {
+            headers: {Authorization: `Bearer ${token}`},
+        })
+            .then((res) => res.json())
+            .then(parseChatsResponse), [authorizedFetch, token])
+
+    const fetchChatById = useCallback((chatId: number) =>
+        authorizedFetch(`${API_BASE_URL}/get-chat-by-id?chat_id=${encodeURIComponent(String(chatId))}`, {
+            headers: {Authorization: `Bearer ${token}`},
+        })
+            .then((res) => res.json())
+            .then(parseChatResponse), [authorizedFetch, token])
 
     const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -126,7 +251,7 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
         formData.append('file', file)
 
         setUploading(true)
-        fetch(`${API_BASE_URL}/upload-file`, {
+        authorizedFetch(`${API_BASE_URL}/upload-file`, {
             method: 'POST',
             headers: {Authorization: `Bearer ${token}`},
             body: formData,
@@ -147,10 +272,21 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
             })
             .catch(() => {})
 
+        setChatsLoading(true)
+        fetchChats()
+            .then((newChats) => {
+                if (cancelled) return
+                setChats(newChats)
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (!cancelled) setChatsLoading(false)
+            })
+
         return () => {
             cancelled = true
         }
-    }, [token])
+    }, [fetchChats, fetchFiles])
 
     useEffect(() => {
         return () => {
@@ -164,13 +300,30 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
         setPreviewHighlight(highlight ?? null)
         setPreviewLoading(true)
 
-        fetch(`${API_BASE_URL}/get-file?filename=${encodeURIComponent(file.name)}`, {
+        authorizedFetch(`${API_BASE_URL}/get-file?filename=${encodeURIComponent(file.name)}`, {
             headers: {Authorization: `Bearer ${token}`},
         })
             .then((res) => res.blob())
             .then((blob) => setPreviewUrl(URL.createObjectURL(blob)))
             .catch(() => {})
             .finally(() => setPreviewLoading(false))
+    }
+
+    const toggleFilterFile = (fileName: string) => {
+        setSelectedFilterFiles((selectedFiles) =>
+            selectedFiles.includes(fileName)
+                ? selectedFiles.filter((name) => name !== fileName)
+                : [...selectedFiles, fileName]
+        )
+    }
+
+    const handleFileClick = (file: StockFile, highlight?: string) => {
+        if (filterMode) {
+            toggleFilterFile(file.name)
+            return
+        }
+
+        openFile(file, highlight)
     }
 
     const closePreview = () => {
@@ -180,16 +333,36 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
     }
 
 
+    const refreshChats = useCallback(() => {
+        setChatsLoading(true)
+        fetchChats()
+            .then((newChats) => setChats(newChats))
+            .catch(() => {})
+            .finally(() => setChatsLoading(false))
+    }, [fetchChats])
+
     const runSearch = (query: string) => {
+        if (searching) return
+
         setSearchQuery(query)
         setSearching(true)
+        setMessages((prev) => [...prev, {id: Date.now(), author: 'user', text: query}])
+        setDraft('')
 
-        fetch(`${API_BASE_URL}/search-in-files?query=${encodeURIComponent(query)}`, {
+        authorizedFetch(getSearchUrl(query, currentChatId, selectedFilterFiles), {
             headers: {Authorization: `Bearer ${token}`},
         })
             .then((res) => res.json())
-            .then((data: SearchResults) => setSearchResults(data))
-            .catch(() => setSearchResults({named_files: [], texts: []}))
+            .then((data: SearchResults) => {
+                setSearchResults(data)
+                if (data.chat_id !== undefined) setCurrentChatId(data.chat_id)
+                setMessages((prev) => [...prev, {id: Date.now() + 1, author: 'assistant', text: getSearchSummary(data)}])
+                refreshChats()
+            })
+            .catch(() => {
+                setSearchResults({named_files: [], texts: []})
+                setMessages((prev) => [...prev, {id: Date.now() + 1, author: 'assistant', text: 'Не удалось выполнить поиск'}])
+            })
             .finally(() => setSearching(false))
     }
 
@@ -198,16 +371,49 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
         setSearchQuery('')
     }
 
+    const openChat = (chat: ChatSummary) => {
+        if (chatLoadingId !== null) return
+
+        setChatLoadingId(chat.id)
+        fetchChatById(chat.id)
+            .then((loadedChat) => {
+                if (!loadedChat) return
+                setCurrentChatId(loadedChat.id)
+                setMessages(toMessages(loadedChat))
+                clearSearch()
+                closePreview()
+            })
+            .catch(() => {})
+            .finally(() => setChatLoadingId(null))
+    }
+
+    const startNewChat = () => {
+        setCurrentChatId(null)
+        setMessages([])
+        setDraft('')
+        clearSearch()
+        closePreview()
+        setSidebarTab('chats')
+    }
+
+    const toggleFilterMode = () => {
+        setFilterMode((enabled) => !enabled)
+        setSidebarTab('files')
+        clearSearch()
+    }
+
     const runQuery = (query: string) => {
         setQuerying(true)
 
-        fetch(`${API_BASE_URL}/deep-search?query=${encodeURIComponent(query)}`, {
+        authorizedFetch(getDeepSearchUrl(query, currentChatId, selectedFilterFiles), {
             headers: {Authorization: `Bearer ${token}`},
         })
             .then((res) => res.json())
             .then((data: DeepSearchResponse) => {
                 const text = (data.result ?? []).map((chunk) => chunk.text).join('\n\n')
+                if (data.chat_id !== undefined) setCurrentChatId(data.chat_id)
                 setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: text || 'Ничего не найдено'}])
+                refreshChats()
             })
             .catch(() => {
                 setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: 'Не удалось получить ответ'}])
@@ -366,7 +572,7 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
                     <div className="chat-composer-wrap">
                         <div className="chat-composer">
                             <Input
-                                placeholder={composerMode == 'search' ? "Напишите, какой файл вы ищете..." : "Напишите сообщение..."}
+                                placeholder={composerMode === 'search' ? "Напишите, какой файл вы ищете..." : "Напишите сообщение..."}
                                 value={draft}
                                 onChange={(e) => setDraft(e.target.value)}
                                 onKeyDown={handleKeyDown}
@@ -388,14 +594,19 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
                                     >
                                         <Text size="xs" color={composerMode === 'query' ? 'onAccent' : 'secondary'}>{'Запрос'}</Text>
                                     </button>
-                                    <button className="icon-btn" type="button">
+                                    <button
+                                        className={`icon-btn${filterMode ? ' icon-btn-active' : ''}`}
+                                        type="button"
+                                        onClick={toggleFilterMode}
+                                        title={selectedFilterFiles.length > 0 ? `Выбрано файлов: ${selectedFilterFiles.length}` : 'Фильтр по файлам'}
+                                    >
                                         <IconFilter />
                                     </button>
                                 </div>
 
                                 <button className="chat-send-btn" type="button" onClick={sendMessage}>
                                     <Text size="xs" color="onAccent">{composerMode === 'query' ? 'Отправить' : 'Поиск'}</Text>
-                                    <IconSend size={13} />
+                                    {/* <IconSend size={13} /> */}
                                 </button>
                             </div>
                         </div>
@@ -432,15 +643,16 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
                                             <div className="saro-main-files-grid">
                                                 {searchResults.named_files.map((name) => (
                                                     <div
-                                                        className={`saro-main-file-card${previewFile?.id === name ? ' saro-main-file-card-active' : ''}`}
+                                                        className={`saro-main-file-card${previewFile?.id === name ? ' saro-main-file-card-active' : ''}${selectedFilterFiles.includes(name) ? ' saro-main-file-card-selected' : ''}`}
                                                         key={name}
-                                                        onClick={() => openFile(fileFromName(name), searchQuery)}
+                                                        onClick={() => handleFileClick(fileFromName(name), searchQuery)}
                                                     >
                                                         <div className="saro-main-file-icon">
                                                             {previewLoading && previewFile?.id === name
                                                                 ? <span className="saro-main-file-spinner" />
                                                                 : <Text size="xs" color="accent">{getExt(name)}</Text>}
                                                         </div>
+                                                        {selectedFilterFiles.includes(name) && <span className="saro-main-file-selected-dot" />}
                                                         <div className="saro-main-file-name">
                                                             <Text size="xs" color="primary">{name}</Text>
                                                         </div>
@@ -456,9 +668,9 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
                                             <div className="saro-search-text-list">
                                                 {searchResults.texts.map((match, i) => (
                                                     <div
-                                                        className={`saro-search-text-card${previewFile?.id === match.file ? ' saro-search-text-card-active' : ''}`}
+                                                        className={`saro-search-text-card${previewFile?.id === match.file ? ' saro-search-text-card-active' : ''}${selectedFilterFiles.includes(match.file) ? ' saro-search-text-card-selected' : ''}`}
                                                         key={`${match.file}-${i}`}
-                                                        onClick={() => openFile(fileFromName(match.file), searchQuery)}
+                                                        onClick={() => handleFileClick(fileFromName(match.file), searchQuery)}
                                                     >
                                                         <Text size="xs" color="accent">{match.file}</Text>
                                                         <p className="jost saro-search-excerpt">{highlightExcerpt(match.text, searchQuery)}</p>
@@ -472,40 +684,93 @@ export const SaroMainPage = ({token}: SaroMainPageProps) => {
                         </>
                     ) : (
                         <>
-                            <Text size="xs" color="secondary">{'Файлы'}</Text>
-                            <div className="saro-main-files-grid">
-                                <label className={`saro-main-file-card saro-main-file-card-upload${uploading ? ' saro-main-file-card-uploading' : ''}`}>
-                                    <input
-                                        type="file"
-                                        className="saro-main-file-upload-input"
-                                        onChange={handleFileUpload}
-                                        disabled={uploading}
-                                    />
-                                    <div className="saro-main-file-icon">
-                                        {uploading ? <span className="saro-main-file-spinner" /> : <IconPlus size={18} />}
-                                    </div>
-                                    <div className="saro-main-file-name">
-                                        <Text size="xs" color="secondary">{uploading ? 'Загрузка...' : 'Добавить файл'}</Text>
-                                    </div>
-                                </label>
+                            <div className="saro-main-tabs">
+                                <button
+                                    className={`saro-main-tab${sidebarTab === 'files' ? ' saro-main-tab-active' : ''}`}
+                                    type="button"
+                                    onClick={() => setSidebarTab('files')}
+                                >
+                                    <Text size="xs" color={sidebarTab === 'files' ? 'onAccent' : 'secondary'}>{'Файлы'}</Text>
+                                </button>
+                                <button
+                                    className={`saro-main-tab${sidebarTab === 'chats' ? ' saro-main-tab-active' : ''}`}
+                                    type="button"
+                                    onClick={() => {
+                                        setSidebarTab('chats')
+                                        refreshChats()
+                                    }}
+                                >
+                                    <Text size="xs" color={sidebarTab === 'chats' ? 'onAccent' : 'secondary'}>{'Чаты'}</Text>
+                                </button>
+                            </div>
 
-                                {files.map((file) => (
-                                    <div
-                                        className={`saro-main-file-card${previewFile?.id === file.id ? ' saro-main-file-card-active' : ''}`}
-                                        key={file.id}
-                                        onClick={() => openFile(file)}
-                                    >
+                            {sidebarTab === 'files' ? (
+                                <div className="saro-main-files-grid">
+                                    <label className={`saro-main-file-card saro-main-file-card-upload${uploading ? ' saro-main-file-card-uploading' : ''}`}>
+                                        <input
+                                            type="file"
+                                            className="saro-main-file-upload-input"
+                                            onChange={handleFileUpload}
+                                            disabled={uploading}
+                                        />
                                         <div className="saro-main-file-icon">
-                                            {previewLoading && previewFile?.id === file.id
-                                                ? <span className="saro-main-file-spinner" />
-                                                : <Text size="xs" color="accent">{file.ext}</Text>}
+                                            {uploading ? <span className="saro-main-file-spinner" /> : <IconPlus size={18} />}
                                         </div>
                                         <div className="saro-main-file-name">
-                                            <Text size="xs" color="primary">{file.name}</Text>
+                                            <Text size="xs" color="secondary">{uploading ? 'Загрузка...' : 'Добавить файл'}</Text>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    </label>
+
+                                    {files.map((file) => (
+                                        <div
+                                            className={`saro-main-file-card${previewFile?.id === file.id ? ' saro-main-file-card-active' : ''}${selectedFilterFiles.includes(file.name) ? ' saro-main-file-card-selected' : ''}`}
+                                            key={file.id}
+                                            onClick={() => handleFileClick(file)}
+                                        >
+                                            <div className="saro-main-file-icon">
+                                                {previewLoading && previewFile?.id === file.id
+                                                    ? <span className="saro-main-file-spinner" />
+                                                    : <Text size="xs" color="accent">{file.ext}</Text>}
+                                            </div>
+                                            {selectedFilterFiles.includes(file.name) && <span className="saro-main-file-selected-dot" />}
+                                            <div className="saro-main-file-name">
+                                                <Text size="xs" color="primary">{file.name}</Text>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="saro-main-chats">
+                                    <button className="saro-main-new-chat-btn" type="button" onClick={startNewChat}>
+                                        <IconPlus size={16} />
+                                        <Text size="xs" color="onAccent">{'Новый чат'}</Text>
+                                    </button>
+
+                                    {chatsLoading ? (
+                                        <div className="chat-empty">
+                                            <span className="saro-main-file-spinner" />
+                                            <Text size="s" color="secondary">{'Загрузка чатов...'}</Text>
+                                        </div>
+                                    ) : chats.length === 0 ? (
+                                        <div className="chat-empty">
+                                            <Text size="s" color="secondary">{'Чатов пока нет'}</Text>
+                                        </div>
+                                    ) : (
+                                        <div className="saro-main-chats-list">
+                                            {chats.map((chat) => (
+                                                <div
+                                                    className={`saro-main-chat-card${currentChatId === chat.id ? ' saro-main-chat-card-active' : ''}`}
+                                                    key={chat.id}
+                                                    onClick={() => openChat(chat)}
+                                                >
+                                                    <Text size="s" color="primary">{chat.name}</Text>
+                                                    {chatLoadingId === chat.id && <Text size="xs" color="secondary">{'Загрузка...'}</Text>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
