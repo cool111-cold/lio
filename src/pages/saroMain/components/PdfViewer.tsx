@@ -9,35 +9,62 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).toString()
 
 const PAGE_SCALE = 1.4
+const MIN_SNIPPET_WORDS = 8
+const FALLBACK_DIV_SPAN = 10
+
+const normalizeText = (text: string) => text.trim().toLowerCase().replace(/\s+/g, ' ')
+
+const getSnippetIndex = (text: string, phrase: string) => {
+    const exactIndex = text.indexOf(phrase)
+    if (exactIndex !== -1) return {index: exactIndex, length: phrase.length}
+
+    const words = phrase.split(/\s+/).filter((word) => word.length > 2)
+    if (words.length < MIN_SNIPPET_WORDS) return null
+
+    for (let size = Math.min(18, words.length); size >= MIN_SNIPPET_WORDS; size--) {
+        for (let start = 0; start <= words.length - size; start += Math.max(1, Math.floor(size / 2))) {
+            const snippet = words.slice(start, start + size).join(' ')
+            const index = text.indexOf(snippet)
+
+            if (index !== -1) return {index, length: snippet.length}
+        }
+    }
+
+    return null
+}
 
 const applyHighlight = (divs: HTMLElement[], strs: string[], highlight: string) => {
-    const phrase = highlight.trim().toLowerCase()
+    const phrase = normalizeText(highlight)
     if (!phrase) return
 
-    const words = Array.from(new Set(phrase.split(/\s+/).filter(Boolean)))
-    const lowerStrs = strs.map((s) => s.toLowerCase())
+    const words = Array.from(new Set(phrase.split(/\s+/).filter((word) => word.length > 2)))
+    const normalizedStrs = strs.map(normalizeText)
 
     let matched: number[] = []
 
     const offsets: number[] = []
     let pos = 0
-    lowerStrs.forEach((s) => {
+    normalizedStrs.forEach((s) => {
         offsets.push(pos)
         pos += s.length + 1
     })
-    const phraseIndex = lowerStrs.join('\n').indexOf(phrase)
+    const text = normalizedStrs.join(' ')
+    const snippetMatch = getSnippetIndex(text, phrase)
 
-    if (phraseIndex !== -1) {
-        const end = phraseIndex + phrase.length
-        matched = lowerStrs
+    if (snippetMatch) {
+        const end = snippetMatch.index + snippetMatch.length
+        matched = normalizedStrs
             .map((_, i) => i)
-            .filter((i) => offsets[i] < end && offsets[i] + lowerStrs[i].length > phraseIndex)
+            .filter((i) => offsets[i] < end && offsets[i] + normalizedStrs[i].length > snippetMatch.index)
     }
 
     if (!matched.length) {
-        matched = lowerStrs
-            .map((s, i) => (words.some((w) => s.includes(w)) ? i : -1))
-            .filter((i) => i !== -1)
+        const firstMatch = normalizedStrs.findIndex((s) => words.some((w) => s.includes(w)))
+        if (firstMatch !== -1) {
+            matched = normalizedStrs
+                .map((_, i) => i)
+                .filter((i) => i >= firstMatch && i < firstMatch + FALLBACK_DIV_SPAN)
+        }
     }
 
     if (!matched.length) return

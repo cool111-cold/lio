@@ -12,6 +12,10 @@ interface Message {
     id: number;
     author: 'user' | 'assistant';
     text: string;
+    filter?: string[];
+    searchResults?: SearchResults;
+    searchQuery?: string;
+    sources?: MessageSource[];
 }
 
 interface StockFile {
@@ -42,14 +46,47 @@ interface DeepSearchChunk {
     };
 }
 
+interface QueryFile {
+    id: number | string;
+    text: string;
+    score?: number;
+    metadata: {
+        file: string;
+        page?: number;
+        chunk?: number;
+        hash?: string;
+    };
+}
+
 interface DeepSearchResponse {
     result: DeepSearchChunk[];
     chat_id?: number;
 }
 
+interface AssistantQueryResponse {
+    role?: 'assistant';
+    text: string;
+    files?: QueryFile[];
+    chat_id?: number;
+    name?: string;
+}
+
+interface MessageSource {
+    fileName: string;
+    sourceIndex: number;
+    chunk?: number;
+    page?: number;
+    text?: string;
+}
+
+type QueryResponse = DeepSearchResponse | SearchResults | AssistantQueryResponse
+type WrappedQueryResponse = QueryResponse | string | {message?: unknown; answer?: unknown; data?: unknown}
+
 interface ChatDBMessage {
     role: 'user' | 'assistant';
     text: unknown;
+    filter?: unknown;
+    files?: unknown;
 }
 
 interface ChatSummary {
@@ -107,11 +144,108 @@ const isDeepSearchResponse = (value: unknown): value is DeepSearchResponse =>
     && value !== null
     && 'result' in value
 
+const isAssistantQueryResponse = (value: unknown): value is AssistantQueryResponse =>
+    typeof value === 'object'
+    && value !== null
+    && 'text' in value
+    && typeof (value as {text?: unknown}).text === 'string'
+
+const usedChunkPattern = /\n*\s*\*\*Использован фрагмент:\*\*\s*Chunk\s+(\d+)\s*$/i
+const inlineChunkPattern = /<<chunk\s+([\d,\s]+)>>/gi
+const inlineNumericChunkPattern = /<<\s*([\d,\s]+)\s*>>/g
+const sourcesLinePattern = /\n*\s*Источники:\s*<<chunk\s+[\d,\s]+>>\s*$/i
+const numericSourcesLinePattern = /\n*\s*Источники:\s*<<\s*[\d,\s]+\s*>>\s*$/i
+
+const unwrapQueryResponse = (data: WrappedQueryResponse): unknown => {
+    if (isSearchResults(data) || isDeepSearchResponse(data) || isAssistantQueryResponse(data)) return data
+    if (typeof data !== 'object' || data === null) return data
+
+    const wrapped = data as {message?: unknown; answer?: unknown; data?: unknown}
+
+    if (wrapped.message !== undefined) {
+        const message = unwrapQueryResponse(wrapped.message as WrappedQueryResponse)
+        if (isAssistantQueryResponse(message) && message.files === undefined && 'files' in wrapped) {
+            return {...message, files: (wrapped as {files?: QueryFile[]}).files}
+        }
+        if (typeof message === 'string' && 'files' in wrapped) {
+            return {text: message, files: (wrapped as {files?: QueryFile[]}).files}
+        }
+        return message
+    }
+
+    if (wrapped.answer !== undefined) {
+        const answer = unwrapQueryResponse(wrapped.answer as WrappedQueryResponse)
+        if (isAssistantQueryResponse(answer) && answer.files === undefined && 'files' in wrapped) {
+            return {...answer, files: (wrapped as {files?: QueryFile[]}).files}
+        }
+        if (typeof answer === 'string' && 'files' in wrapped) {
+            return {text: answer, files: (wrapped as {files?: QueryFile[]}).files}
+        }
+        return answer
+    }
+
+    if (wrapped.data !== undefined) return unwrapQueryResponse(wrapped.data as WrappedQueryResponse)
+
+    return data
+}
+
+const parseResponseBody = async (res: Response): Promise<WrappedQueryResponse> => {
+    const raw = await res.text()
+    if (!raw.trim()) return ''
+
+    try {
+        return JSON.parse(raw) as WrappedQueryResponse
+    } catch {
+        return raw
+    }
+}
+
+const getReferencedChunkIndexes = (text: string) => {
+    const indexes: number[] = []
+    const oldStyleMatch = text.match(usedChunkPattern)
+    if (oldStyleMatch) indexes.push(Number(oldStyleMatch[1]))
+
+    Array.from(text.matchAll(inlineChunkPattern)).forEach((match) => {
+        match[1]
+            .split(',')
+            .map((item) => Number(item.trim()))
+            .filter((index) => Number.isInteger(index))
+            .forEach((index) => indexes.push(index))
+    })
+
+    Array.from(text.matchAll(inlineNumericChunkPattern)).forEach((match) => {
+        match[1]
+            .split(',')
+            .map((item) => Number(item.trim()))
+            .filter((index) => Number.isInteger(index))
+            .forEach((index) => indexes.push(index))
+    })
+
+    return Array.from(new Set(indexes))
+}
+
+const parseUsedChunk = (text: string) => {
+    const indexes = getReferencedChunkIndexes(text)
+
+    return {
+        text: text
+            .replace(usedChunkPattern, '')
+            .replace(sourcesLinePattern, '')
+            .replace(numericSourcesLinePattern, '')
+            .replace(inlineChunkPattern, '')
+            .replace(inlineNumericChunkPattern, '')
+            .trim(),
+        indexes,
+    }
+}
+
 const normalizeMessageText = (text: unknown): string => {
-    if (typeof text === 'string') return text
+    if (typeof text === 'string') return parseUsedChunk(text).text
     if (text === null || text === undefined) return ''
 
     if (isSearchResults(text)) return getSearchSummary(text)
+
+    if (isAssistantQueryResponse(text)) return normalizeMessageText(text.text)
 
     if (isDeepSearchResponse(text) && Array.isArray(text.result)) {
         return text.result.map((chunk) => chunk.text).join('\n\n') || 'Ничего не найдено'
@@ -124,12 +258,64 @@ const normalizeMessageText = (text: unknown): string => {
     return JSON.stringify(text)
 }
 
+const normalizeFilter = (filter: unknown): string[] => {
+    if (!Array.isArray(filter)) return []
+    return filter.filter((fileName): fileName is string => typeof fileName === 'string')
+}
+
+const normalizeQueryFiles = (files: unknown): QueryFile[] => {
+    if (!Array.isArray(files)) return []
+
+    return files.filter((file): file is QueryFile =>
+        typeof file === 'object'
+        && file !== null
+        && 'text' in file
+        && 'metadata' in file
+        && typeof (file as {text?: unknown}).text === 'string'
+        && typeof (file as {metadata?: {file?: unknown}}).metadata?.file === 'string'
+    )
+}
+
+const getSourcesFromFiles = (text: unknown, files: unknown): MessageSource[] => {
+    const rawText = typeof text === 'string'
+        ? text
+        : isAssistantQueryResponse(text)
+            ? text.text
+            : ''
+    const sourceIndexes = parseUsedChunk(rawText).indexes
+    const normalizedFiles = normalizeQueryFiles(files)
+
+    return sourceIndexes.reduce<MessageSource[]>((sources, sourceIndex) => {
+        const sourceFile = normalizedFiles[sourceIndex]
+        if (!sourceFile) return sources
+
+        sources.push({
+                fileName: sourceFile.metadata.file,
+                sourceIndex,
+                chunk: sourceFile.metadata.chunk,
+                page: sourceFile.metadata.page,
+                text: sourceFile.text,
+        })
+
+        return sources
+    }, [])
+}
+
 const toMessages = (chat: ChatDB): Message[] =>
-    (chat.messages ?? []).map((message, index) => ({
-        id: Number(`${chat.id}${index}`),
-        author: message.role === 'user' ? 'user' : 'assistant',
-        text: normalizeMessageText(message.text),
-    }))
+    (chat.messages ?? []).map((message, index, messages) => {
+        const previousUserMessage = [...messages.slice(0, index)].reverse().find((item) => item.role === 'user')
+        const messageFiles = isAssistantQueryResponse(message.text) ? message.text.files : message.files
+
+        return {
+            id: Number(`${chat.id}${index}`),
+            author: message.role === 'user' ? 'user' : 'assistant',
+            text: normalizeMessageText(message.text),
+            filter: normalizeFilter(message.filter),
+            searchResults: isSearchResults(message.text) ? message.text : undefined,
+            searchQuery: isSearchResults(message.text) ? normalizeMessageText(previousUserMessage?.text) : undefined,
+            sources: getSourcesFromFiles(message.text, messageFiles),
+        }
+    })
 
 const appendFilterParams = (params: URLSearchParams, filterFiles: string[]) => {
     filterFiles.forEach((fileName) => params.append('filter', fileName))
@@ -344,19 +530,26 @@ export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
     const runSearch = (query: string) => {
         if (searching) return
 
+        const filterFiles = [...selectedFilterFiles]
         setSearchQuery(query)
         setSearching(true)
-        setMessages((prev) => [...prev, {id: Date.now(), author: 'user', text: query}])
+        setMessages((prev) => [...prev, {id: Date.now(), author: 'user', text: query, filter: filterFiles}])
         setDraft('')
 
-        authorizedFetch(getSearchUrl(query, currentChatId, selectedFilterFiles), {
+        authorizedFetch(getSearchUrl(query, currentChatId, filterFiles), {
             headers: {Authorization: `Bearer ${token}`},
         })
             .then((res) => res.json())
             .then((data: SearchResults) => {
                 setSearchResults(data)
                 if (data.chat_id !== undefined) setCurrentChatId(data.chat_id)
-                setMessages((prev) => [...prev, {id: Date.now() + 1, author: 'assistant', text: getSearchSummary(data)}])
+                setMessages((prev) => [...prev, {
+                    id: Date.now() + 1,
+                    author: 'assistant',
+                    text: getSearchSummary(data),
+                    searchResults: data,
+                    searchQuery: query,
+                }])
                 refreshChats()
             })
             .catch(() => {
@@ -403,19 +596,61 @@ export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
     }
 
     const runQuery = (query: string) => {
+        const filterFiles = [...selectedFilterFiles]
+        let gotResponse = false
         setQuerying(true)
 
-        authorizedFetch(getDeepSearchUrl(query, currentChatId, selectedFilterFiles), {
+        authorizedFetch(getDeepSearchUrl(query, currentChatId, filterFiles), {
             headers: {Authorization: `Bearer ${token}`},
         })
-            .then((res) => res.json())
-            .then((data: DeepSearchResponse) => {
-                const text = (data.result ?? []).map((chunk) => chunk.text).join('\n\n')
-                if (data.chat_id !== undefined) setCurrentChatId(data.chat_id)
-                setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: text || 'Ничего не найдено'}])
-                refreshChats()
+            .then(parseResponseBody)
+            .then((data: WrappedQueryResponse) => {
+                gotResponse = true
+                try {
+                    const response = unwrapQueryResponse(data)
+
+                    if (isSearchResults(response)) {
+                        if (response.chat_id !== undefined) setCurrentChatId(response.chat_id)
+                        setMessages((prev) => [...prev, {
+                            id: Date.now(),
+                            author: 'assistant',
+                            text: getSearchSummary(response),
+                            searchResults: response,
+                            searchQuery: query,
+                        }])
+                        refreshChats()
+                        return
+                    }
+
+                    if (isAssistantQueryResponse(response)) {
+                        if (response.chat_id !== undefined) setCurrentChatId(response.chat_id)
+                        setMessages((prev) => [...prev, {
+                            id: Date.now(),
+                            author: 'assistant',
+                            text: normalizeMessageText(response.text),
+                            sources: getSourcesFromFiles(response.text, response.files),
+                        }])
+                        refreshChats()
+                        return
+                    }
+
+                    if (isDeepSearchResponse(response)) {
+                        const text = (response.result ?? []).map((chunk) => chunk.text).join('\n\n')
+                        if (response.chat_id !== undefined) setCurrentChatId(response.chat_id)
+                        setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: text || 'Ничего не найдено'}])
+                        refreshChats()
+                        return
+                    }
+
+                    setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: normalizeMessageText(response) || 'Ничего не найдено'}])
+                    refreshChats()
+                } catch {
+                    setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: normalizeMessageText(data) || 'Ничего не найдено'}])
+                    refreshChats()
+                }
             })
             .catch(() => {
+                if (gotResponse) return
                 setMessages((prev) => [...prev, {id: Date.now(), author: 'assistant', text: 'Не удалось получить ответ'}])
             })
             .finally(() => setQuerying(false))
@@ -450,7 +685,7 @@ export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
 
         if (querying) return
 
-        setMessages((prev) => [...prev, {id: Date.now(), author: 'user', text}])
+        setMessages((prev) => [...prev, {id: Date.now(), author: 'user', text, filter: [...selectedFilterFiles]}])
         setDraft('')
         runQuery(text)
     }
@@ -460,6 +695,114 @@ export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
             e.preventDefault()
             sendMessage()
         }
+    }
+
+    const renderMessageFilters = (filter?: string[]) => {
+        if (!filter?.length) return null
+
+        return (
+            <div className="chat-message-filter-list">
+                {filter.map((fileName) => (
+                    <button
+                        className="chat-message-filter-chip"
+                        key={fileName}
+                        type="button"
+                        onClick={() => openFile(fileFromName(fileName))}
+                    >
+                        <Text size="xs" color="primary">{fileName}</Text>
+                    </button>
+                ))}
+            </div>
+        )
+    }
+
+    const renderMessageSearchResults = (message: Message) => {
+        const results = message.searchResults
+        if (!results) return null
+
+        const query = message.searchQuery ?? ''
+
+        return (
+            <div className="chat-search-results">
+                <Text size="xs" color="secondary">{query ? `Результаты поиска: «${query}»` : 'Результаты поиска'}</Text>
+
+                {results.named_files.length === 0 && results.texts.length === 0 ? (
+                    <Text size="s" color="secondary">{'Ничего не найдено'}</Text>
+                ) : (
+                    <>
+                        {results.named_files.length > 0 && (
+                            <div className="chat-search-section">
+                                <Text size="xs" color="lightGray">{'СОВПАДЕНИЯ В НАЗВАНИЯХ'}</Text>
+                                <div className="chat-search-file-list">
+                                    {results.named_files.map((name) => (
+                                        <button
+                                            className={`chat-search-file-card${selectedFilterFiles.includes(name) ? ' chat-search-file-card-selected' : ''}`}
+                                            key={name}
+                                            type="button"
+                                            onClick={() => handleFileClick(fileFromName(name), query)}
+                                        >
+                                            <span className="chat-search-file-ext">
+                                                <Text size="xs" color="accent">{getExt(name)}</Text>
+                                            </span>
+                                            <Text size="xs" color="primary">{name}</Text>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {results.texts.length > 0 && (
+                            <div className="chat-search-section">
+                                <Text size="xs" color="lightGray">{'СОВПАДЕНИЯ В ТЕКСТЕ'}</Text>
+                                <div className="chat-search-text-list">
+                                    {results.texts.map((match, i) => (
+                                        <button
+                                            className={`chat-search-text-card${selectedFilterFiles.includes(match.file) ? ' chat-search-text-card-selected' : ''}`}
+                                            key={`${match.file}-${i}`}
+                                            type="button"
+                                            onClick={() => handleFileClick(fileFromName(match.file), query)}
+                                        >
+                                            <Text size="xs" color="accent">{match.file}</Text>
+                                            <span className="jost saro-search-excerpt">{highlightExcerpt(match.text, query)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        )
+    }
+
+    const renderMessageSources = (sources?: MessageSource[]) => {
+        if (!sources?.length) return null
+
+        return (
+            <div className="chat-message-source-list">
+                {sources.map((source) => (
+                    <button
+                        className="chat-message-source-card"
+                        key={`${source.fileName}-${source.sourceIndex}`}
+                        type="button"
+                        onClick={() => openFile(fileFromName(source.fileName), source.text)}
+                    >
+                        <span className="chat-search-file-ext">
+                            <Text size="xs" color="accent">{getExt(source.fileName)}</Text>
+                        </span>
+                        <div className="chat-message-source-body">
+                            <Text size="xs" color="primary">{source.fileName}</Text>
+                            <Text
+                                size="xs"
+                                color="secondary"
+                            // >{`Фрагмент ${source.sourceIndex}${source.chunk !== undefined ? `, chunk ${source.chunk}` : ''}${source.page !== undefined ? `, стр. ${source.page}` : ''}`}</Text>
+                            >{`${source.page !== undefined ? `стр. ${source.page}` : ''}`}</Text>
+                            {source.text && <span className="jost chat-message-source-excerpt">{source.text}</span>}
+                        </div>
+                    </button>
+                ))}
+            </div>
+        )
     }
 
     return (
@@ -523,28 +866,37 @@ export const SaroMainPage = ({token, onUnauthorized}: SaroMainPageProps) => {
                             </div>
                         ) : (
                             <>
-                                <div className="chat-day-divider">
+                                {/* <div className="chat-day-divider">
                                     <span className="chat-day-line" />
                                     <Text size="xs" color="lightGray">{'СЕГОДНЯ'}</Text>
                                     <span className="chat-day-line" />
-                                </div>
+                                </div> */}
 
                                 {messages.map((message) => (
-                                    <div key={message.id} className={`chat-message-group chat-message-group-${message.author}`}>
+                                    <div
+                                        key={message.id}
+                                        className={`chat-message-group chat-message-group-${message.author}${message.searchResults ? ' chat-message-group-search-results' : ''}`}
+                                    >
                                         <div className="chat-message-meta">
                                             <Text size="xs" color="primary">{message.author === 'user' ? 'Я' : 'saro'}</Text>
-                                            <Text size="xs" color="lightGray">{'•  только что'}</Text>
+                                            {/* <Text size="xs" color="lightGray">{'•  только что'}</Text> */}
                                         </div>
 
                                         {message.author === 'user' ? (
-                                            <div className="chat-message-bubble">
-                                                <Text size="s" color="primary">{message.text}</Text>
-                                            </div>
-                                        ) : (
                                             <>
-                                                <div className="chat-message-text">
+                                                <div className="chat-message-bubble">
                                                     <Text size="s" color="primary">{message.text}</Text>
                                                 </div>
+                                                {renderMessageFilters(message.filter)}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {message.searchResults ? renderMessageSearchResults(message) : (
+                                                    <div className="chat-message-text">
+                                                        <Text size="s" color="primary">{message.text}</Text>
+                                                    </div>
+                                                )}
+                                                {renderMessageSources(message.sources)}
                                                 <div className="chat-message-actions">
                                                     <button className="chat-action-btn" type="button"><IconThumbUp /></button>
                                                     <button className="chat-action-btn" type="button"><IconThumbDown /></button>
