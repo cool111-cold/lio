@@ -4,8 +4,8 @@ import { ThreeDPage, RoomPage } from './pages';
 
 function App() {
   return (
-    <RoomPage />
-    // <ThreeDPage />
+    // <RoomPage />
+    <ThreeDPage />
   );
 }
 

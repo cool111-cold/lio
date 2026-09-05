@@ -21,7 +21,7 @@ const FACE_IMAGES: Record<CubeFace, string> = {
 }
 
 const FACE_IMAGE_URLS = Array.from(new Set(Object.values(FACE_IMAGES)))
-const TEXTS = ['Покрути куб', 'Каждая сторона свой фон', 'Креативное использование 3D в дизайне?', 'Можешь перемещаться по слайдам с помощью VɅ сверху экрана']
+const TEXTS = ['Покрути куб', 'Каждая сторона свой фон', 'Использование 3D в дизайне', 'VɅ']
 
 const TextComponent = ({index} : {index: number}) => {
 
