@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://lio-back-viww.onrender.com/'
+export const API_BASE_URL = 'https://lio-back-viww.onrender.com'
 
 /** Один элемент массива `condition` / `product_id` — произвольный словарь. */
 export type AnyDict = Record<string, unknown>
