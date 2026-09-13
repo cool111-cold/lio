@@ -1,3 +1,5 @@
 export { colors } from './colors'
 export { DEFAULT_LANGUAGE, LANGUAGES, getText } from './text'
 export type { Language, TextKey } from './text'
+export { PAGES } from './navigation'
+export type { PageKey } from './navigation'

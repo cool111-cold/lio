@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { PageComponent, Text, Header } from "../../components"
 import { Cube, CubeFace } from "./components/cube"
-import { getText } from "../../helpers"
+import { getText, PageKey } from "../../helpers"
 import cubeBackgroundImg from '../../assets/img/2.jpg'
 import cubeBackgroundImg3 from '../../assets/img/6.jpg'
 import cubeBackgroundImg4 from '../../assets/img/4.jpg'
@@ -43,7 +43,11 @@ const SlideComponent = () => {
     )
 }
 
-export const ThreeDPage = () => {
+interface ThreeDPageProps {
+    onNavigate?: (page: PageKey) => void;
+}
+
+export const ThreeDPage = ({onNavigate}: ThreeDPageProps = {}) => {
     const [alignedFace, setAlignedFace] = useState<CubeFace | null>(null);
     const [index, setIndex] = useState(-1);
     useEffect(() => {
@@ -52,7 +56,7 @@ export const ThreeDPage = () => {
 
     return (
         <PageComponent>
-            <Header />
+            <Header onLeftClick={() => onNavigate?.('main')} />
             <div style={{position: 'relative', zIndex: 1, width: '100%', height: '100%'}}>
                 <Cube
                     onFaceAlignedChange={setAlignedFace}

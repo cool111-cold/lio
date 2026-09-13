@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react"
 import { PageComponent, Header, Text } from "../../components"
+import { PageKey } from "../../helpers"
 import Bg from '../../assets/video/4.mp4';
 import BgImage from '../../assets/img/10.jpg';
 import BgImageFront from '../../assets/img/10-front.png';
@@ -156,7 +157,11 @@ const Slides = ({tracks, playingTrackId, progress, onTrackClick}: {tracks: Track
     )
 }
 
-export const RoomPage = () => {
+interface RoomPageProps {
+    onNavigate?: (page: PageKey) => void;
+}
+
+export const RoomPage = ({onNavigate}: RoomPageProps = {}) => {
     const [videoEnded, setVideoEnded] = useState(false);
     const [imageBlurred, setImageBlurred] = useState(true);
     const [tracks, setTracks] = useState<Track[]>([]);
@@ -226,7 +231,7 @@ export const RoomPage = () => {
 
     return (
         <PageComponent>
-            <Header />
+            <Header onLeftClick={() => onNavigate?.('main')} />
             <Background videoEnded={videoEnded} imageBlurred={imageBlurred} onVideoEnded={() => setVideoEnded(true)}>
                 <div style={{position: 'absolute', zIndex: 100, top: '50%', left: '50%', transform: "translateY(-50%) translateX(-50%)", opacity: videoEnded ? 0 : 1, transition: 'opacity 0.8s ease-in-out', pointerEvents: videoEnded ? 'none' : 'auto'}}>
                     <Text size="xl" animation >{'Послушаем музыку?'}</Text>

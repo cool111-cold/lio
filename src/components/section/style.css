@@ -1,0 +1,28 @@
+.section {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 90px 8vw;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.section-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.section-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.section-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}

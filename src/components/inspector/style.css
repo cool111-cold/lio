@@ -1,0 +1,151 @@
+.inspectable {
+    position: relative;
+    cursor: pointer;
+    outline: 1px dashed transparent;
+    outline-offset: -1px;
+    transition: outline-color 0.2s ease;
+}
+
+.inspectable:hover {
+    outline-color: rgba(255, 255, 255, 0.35);
+}
+
+.inspectable-active {
+    outline: 2px solid #f9f9f9 !important;
+    outline-offset: -2px;
+}
+
+.inspectable-tag {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 60;
+    background: #f9f9f9;
+    color: #000;
+    font-family: "Jost", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.inspectable:hover > .inspectable-tag,
+.inspectable-active > .inspectable-tag {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.inspector-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(360px, 88vw);
+    background: rgba(10, 10, 10, 0.94);
+    backdrop-filter: blur(14px);
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    box-sizing: border-box;
+}
+
+.inspector-panel-open {
+    transform: translateX(0);
+}
+
+.inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.inspector-title {
+    font-family: "Jost", sans-serif;
+    color: #f9f9f9;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.inspector-close {
+    cursor: pointer;
+    color: #a7a7a7;
+    font-size: 15px;
+    padding: 4px 8px;
+    user-select: none;
+}
+
+.inspector-close:hover {
+    color: #f9f9f9;
+}
+
+.inspector-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.inspector-code {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+.inspector-code-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.inspector-code-name {
+    font-family: "Jost", sans-serif;
+    color: #f9f9f9;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.inspector-code-file {
+    font-family: SFMono-Regular, Consolas, Menlo, monospace;
+    color: #7a7a7a;
+    font-size: 11px;
+}
+
+.inspector-code-block {
+    margin: 0;
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.inspector-code-block code {
+    font-family: SFMono-Regular, Consolas, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #d8e8d8;
+    white-space: pre;
+}
+
+.inspector-code-empty {
+    font-family: "Jost", sans-serif;
+    font-size: 12px;
+    color: #888;
+}
+
