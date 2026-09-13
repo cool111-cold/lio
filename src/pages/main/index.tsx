@@ -16,49 +16,18 @@ import {
 import { PageKey } from "../../helpers"
 import vIcon from '../../assets/icons/v-icon.svg';
 import aboutImg from '../../assets/img/8.jpg';
-import project1Img from '../../assets/img/4.jpg';
-import project2Img from '../../assets/img/5.jpg';
-import project3Img from '../../assets/img/6.jpg';
-import project4Img from '../../assets/img/7.jpg';
 import roomPreviewImg from '../../assets/img/10.jpg';
 import cubePreviewImg from '../../assets/img/2.jpg';
+import salesPreviewImg from '../../assets/img/10-front.png';
 import './style.css';
 
 const NAV_LINKS = [
     {href: '#about', label: 'Обо мне'},
     {href: '#skills', label: 'Навыки'},
-    {href: '#projects', label: 'Проекты'},
     {href: '#explore', label: 'Ещё'},
 ]
 
 const SKILLS = ['React', 'TypeScript', 'Three.js', 'React Three Fiber', 'Node.js', 'Figma', 'WebGL', 'Framer Motion']
-
-const PROJECTS = [
-    {
-        title: 'Кубический шоурум',
-        description: 'Интерактивная 3D‑витрина товаров на Three.js с покадровой подсветкой граней.',
-        image: project1Img,
-        tags: ['Three.js', 'React'],
-    },
-    {
-        title: 'Комната с музыкой',
-        description: 'Атмосферная страница с видео‑фоном и плеером треков из iTunes API.',
-        image: project2Img,
-        tags: ['API', 'Audio'],
-    },
-    {
-        title: 'Дизайн‑система',
-        description: 'Библиотека переиспользуемых UI‑компонентов для быстрой сборки страниц.',
-        image: project3Img,
-        tags: ['UI Kit', 'TypeScript'],
-    },
-    {
-        title: 'Лендинг бренда',
-        description: 'Одностраничный сайт с анимациями появления и адаптивной версткой.',
-        image: project4Img,
-        tags: ['Landing', 'Animation'],
-    },
-]
 
 const scrollToId = (id: string) => {
     document.getElementById(id)?.scrollIntoView({behavior: 'smooth'})
@@ -76,7 +45,6 @@ const SECTION_SOURCES: Record<string, ComponentSource> = {
             <Inspectable id="hero" name="HeroSection">...</Inspectable>
             <Inspectable id="about" name="AboutSection">...</Inspectable>
             <Inspectable id="skills" name="SkillsSection">...</Inspectable>
-            <Inspectable id="projects" name="ProjectsSection">...</Inspectable>
             <Inspectable id="explore" name="ExploreSection">...</Inspectable>
             <Inspectable id="footer" name="Footer">...</Inspectable>
         </div>
@@ -131,7 +99,7 @@ const SECTION_SOURCES: Record<string, ComponentSource> = {
             <Text size="m" color="gray">Создаю интерфейсы на стыке дизайна, 3D и инженерии</Text>
         </Inspectable>
         <Inspectable id="hero.cta" name="Button">
-            <Button onClick={() => scrollToId('projects')}>Смотреть проекты</Button>
+            <Button onClick={() => scrollToId('explore')}>Смотреть проекты</Button>
         </Inspectable>
     </div>
 </Inspectable>`,
@@ -169,26 +137,6 @@ const SECTION_SOURCES: Record<string, ComponentSource> = {
         file: 'src/pages/main/index.tsx',
         code: `{SKILLS.map((skill) => <Tag key={skill}>{skill}</Tag>)}`,
     },
-    ProjectsSection: {
-        file: 'src/pages/main/index.tsx',
-        code: `<Inspectable id="projects" name="ProjectsSection">
-    <Section id="projects" eyebrow="Проекты" title="Избранные работы">
-        <div className="projects-grid">
-            {PROJECTS.map((project, i) => (
-                <Inspectable key={project.title} id={\`projects.card.\${i}\`} name="Card">
-                    <Card
-                        image={project.image}
-                        title={project.title}
-                        description={project.description}
-                        tags={project.tags}
-                        action="Подробнее"
-                    />
-                </Inspectable>
-            ))}
-        </div>
-    </Section>
-</Inspectable>`,
-    },
     ExploreSection: {
         file: 'src/pages/main/index.tsx',
         code: `<Inspectable id="explore" name="ExploreSection">
@@ -212,6 +160,15 @@ const SECTION_SOURCES: Record<string, ComponentSource> = {
                     onClick={() => onNavigate?.('3d')}
                 />
             </Inspectable>
+            <Inspectable id="explore.sales" name="Card">
+                <Card
+                    image={salesPreviewImg}
+                    title="Консоль продаж"
+                    description="Админка ценообразования: скидки, клиенты, товары и расчёт цены корзины."
+                    action="Перейти"
+                    onClick={() => onNavigate?.('sales')}
+                />
+            </Inspectable>
         </div>
     </Section>
 </Inspectable>`,
@@ -219,8 +176,10 @@ const SECTION_SOURCES: Record<string, ComponentSource> = {
     Footer: {
         file: 'src/pages/main/index.tsx',
         code: `<Inspectable id="footer" name="Footer" className="footer">
-    <img src={vIcon} className="footer-logo" alt="logo" />
-    <img src={vIcon} className="footer-logo" style={{transform: 'rotate(180deg)'}} alt="logo" />
+    <div style={{display: 'flex', flexDirection: 'row'}}>
+        <img src={vIcon} className="footer-logo" alt="logo" />
+        <img src={vIcon} className="footer-logo" style={{transform: 'rotate(180deg)'}} alt="logo" />
+    </div>
     <Text size="xs" color="lightGray">© 2026 Вадим Писарев. Собрано на React.</Text>
 </Inspectable>`,
     },
@@ -258,17 +217,6 @@ const buildPageTree = (): TreeNode => node('page', 'MainPage', [
         node('skills.heading.title', 'Text'),
         node('skills.tags', 'Tag list', SKILLS.map((_, i) => node(`skills.tag.${i}`, 'Tag'))),
     ]),
-    node('projects', 'ProjectsSection', [
-        node('projects.heading.eyebrow', 'Text'),
-        node('projects.heading.title', 'Text'),
-        ...PROJECTS.map((p, i) => node(`projects.card.${i}`, 'Card', [
-            node(`projects.card.${i}.image`, 'Image'),
-            node(`projects.card.${i}.title`, 'Text'),
-            node(`projects.card.${i}.description`, 'Text'),
-            node(`projects.card.${i}.tags`, 'Tag list', p.tags.map((_, j) => node(`projects.card.${i}.tag.${j}`, 'Tag'))),
-            node(`projects.card.${i}.action`, 'Text'),
-        ])),
-    ]),
     node('explore', 'ExploreSection', [
         node('explore.heading.eyebrow', 'Text'),
         node('explore.heading.title', 'Text'),
@@ -283,6 +231,12 @@ const buildPageTree = (): TreeNode => node('page', 'MainPage', [
             node('explore.3d.title', 'Text'),
             node('explore.3d.description', 'Text'),
             node('explore.3d.action', 'Text'),
+        ]),
+        node('explore.sales', 'Card', [
+            node('explore.sales.image', 'Image'),
+            node('explore.sales.title', 'Text'),
+            node('explore.sales.description', 'Text'),
+            node('explore.sales.action', 'Text'),
         ]),
     ]),
     node('footer', 'Footer', [
@@ -334,7 +288,7 @@ export const MainPage = ({onNavigate}: MainPageProps = {}) => {
                                 <Text size="m" color="gray">Создаю интерфейсы на стыке дизайна, 3D и инженерии</Text>
                             </Inspectable>
                             <Inspectable id="hero.cta" name="Button">
-                                <Button onClick={() => scrollToId('projects')}>Смотреть проекты</Button>
+                                <Button onClick={() => scrollToId('explore')}>Смотреть проекты</Button>
                             </Inspectable>
                         </div>
                     </Inspectable>
@@ -362,24 +316,6 @@ export const MainPage = ({onNavigate}: MainPageProps = {}) => {
                         </Section>
                     </Inspectable>
 
-                    <Inspectable id="projects" name="ProjectsSection">
-                        <Section id="projects" eyebrow="Проекты" title="Избранные работы">
-                            <div className="projects-grid">
-                                {PROJECTS.map((project, i) => (
-                                    <Inspectable key={project.title} id={`projects.card.${i}`} name="Card">
-                                        <Card
-                                            image={project.image}
-                                            title={project.title}
-                                            description={project.description}
-                                            tags={project.tags}
-                                            action="Подробнее"
-                                        />
-                                    </Inspectable>
-                                ))}
-                            </div>
-                        </Section>
-                    </Inspectable>
-
                     <Inspectable id="explore" name="ExploreSection">
                         <Section id="explore" eyebrow="Ещё" title="Исследуйте другие страницы">
                             <div className="projects-grid">
@@ -399,6 +335,15 @@ export const MainPage = ({onNavigate}: MainPageProps = {}) => {
                                         description="Интерактивный куб с фоновыми изображениями на гранях."
                                         action="Перейти"
                                         onClick={() => onNavigate?.('3d')}
+                                    />
+                                </Inspectable>
+                                <Inspectable id="explore.sales" name="Card">
+                                    <Card
+                                        image={salesPreviewImg}
+                                        title="Консоль продаж"
+                                        description="Админка ценообразования: скидки, клиенты, товары и расчёт цены корзины."
+                                        action="Перейти"
+                                        onClick={() => onNavigate?.('sales')}
                                     />
                                 </Inspectable>
                             </div>

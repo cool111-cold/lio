@@ -4,40 +4,43 @@ import { useState, useEffect } from 'react';
 import { TextAnimate } from 'react-text-animator';
 
 
-type Size = 'xs' | 's' | 'm' | 'l' | 'xl';
+export type Size = 'xs' | 's' | 'm' | 'l' | 'xl' | 'xxl';
+export type TextColor = 'white' | 'dark' | 'gray' | 'lightGray' | 'primary' | 'secondary' | 'accent' | 'onAccent';
 
 interface TextProps {
     children: string;
-    color?: 'white' | 'dark' | 'gray' | 'lightGray';
+    color?: TextColor;
     size?: Size;
     animation?: boolean
 }
 
 const Sizes = {
-    'xs': -5,
-    's': 5,
-    'm': 10,
-    'l': 15,
-    'xl': 25
+    'xs': 12,
+    's': 14,
+    'm': 16,
+    'l': 22,
+    'xl': 32,
+    'xxl': 42
 }
 
-const Colors = {
+const Colors: Record<TextColor, string> = {
     'white': colors.white,
     'dark': colors.black,
     'gray': colors.gray,
-    'lightGray': colors.lightGray
+    'lightGray': colors.lightGray,
+    // тема (светлая/тёмная) задаётся через CSS-переменную на обёртке страницы
+    'primary': 'var(--lio-text)',
+    'secondary': colors.secondary,
+    'accent': colors.accent,
+    'onAccent': colors.bgDark,
 }
 
 
 
 export const Text = ({children, color = 'white', size = 'm', animation}: TextProps) => {
-    const width = window.innerWidth;
-    const headth = window.innerHeight;
-
     const localStyles = {
         color: Colors[color],
-        fontSize: width / 100 + headth / 100 + Sizes[size]
-
+        fontSize: Sizes[size]
     }
     if (animation) {
         return <TextAnimate animation={'fadeIn'} className='jost' style={localStyles}>{children}</TextAnimate>

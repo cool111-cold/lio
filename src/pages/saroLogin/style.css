@@ -1,0 +1,114 @@
+.saro-login {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 24px;
+    background-color: var(--lio-bg);
+    overflow: hidden;
+    transition: background-color 0.4s ease;
+}
+
+.saro-login-ascii {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.theme-switch {
+    position: absolute;
+    z-index: 1;
+    top: 28px;
+    right: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.theme-switch-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgba(192, 192, 192, 0.35);
+    transition: background-color 0.3s ease;
+}
+
+.theme-switch-track-dark {
+    background: rgba(168, 225, 12, 0.25);
+}
+
+.theme-switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #A8E10C;
+    transition: transform 0.3s ease;
+}
+
+.theme-switch-track-dark .theme-switch-thumb {
+    transform: translateX(20px);
+}
+
+.saro-login-card {
+    position: relative;
+    z-index: 1;
+    width: min(400px, 100%);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.saro-login-tabs {
+    display: flex;
+    width: 100%;
+    margin-top: 28px;
+    border-bottom: 1px solid rgba(192, 192, 192, 0.3);
+}
+
+.saro-login-tab {
+    flex: 1;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    transition: border-color 0.25s ease;
+}
+
+.saro-login-tab-active {
+    border-bottom: 2px solid #A8E10C;
+}
+
+.saro-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-top: 24px;
+}
+
+.saro-login-forgot {
+    display: flex;
+    justify-content: flex-end;
+    cursor: pointer;
+    margin-top: -8px;
+}
+
+.saro-login-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 20px;
+}
