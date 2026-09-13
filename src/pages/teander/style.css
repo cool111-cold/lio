@@ -1,0 +1,423 @@
+.tea-app {
+    --bg: #f4f4f6;
+    --surface: #ffffff;
+    --surface-2: #fbfbfc;
+    --border: #e8e8ec;
+    --border-strong: #dcdce2;
+    --text: #1b1b1f;
+    --text-dim: #63636e;
+    --text-faint: #9a9aa6;
+    --accent: #b5651d;
+    --accent-hover: #9c5417;
+    --accent-soft: #f6ece2;
+    --danger: #d1495b;
+    --danger-soft: #fbecee;
+    --ok: #1f9d63;
+    --ok-soft: #e7f5ee;
+
+    position: fixed;
+    inset: 0;
+    display: flex;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+}
+
+.tea-app *,
+.tea-app *::before,
+.tea-app *::after {
+    box-sizing: border-box;
+}
+
+/* ---- sidebar ---- */
+
+.tea-side {
+    width: 224px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 22px 14px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+}
+
+.tea-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 20px;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.tea-brand-mark {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 18px;
+}
+
+.tea-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background .12s, color .12s;
+}
+
+.tea-nav-item:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.tea-nav-item.is-active {
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    font-weight: 600;
+}
+
+.tea-side-foot {
+    margin-top: auto;
+    padding: 10px 10px 0;
+    color: var(--text-faint);
+    font-size: 11px;
+    border-top: 1px solid var(--border);
+}
+
+/* ---- main ---- */
+
+.tea-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px 64px;
+}
+
+.tea-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.tea-head h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.tea-head p {
+    margin: 4px 0 0;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+/* ---- primitives ---- */
+
+.tea-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.tea-card + .tea-card {
+    margin-top: 16px;
+}
+
+.tea-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.tea-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tea-field > span {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.tea-input {
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    outline: none;
+    transition: border-color .12s;
+}
+
+.tea-input:focus {
+    border-color: var(--accent);
+}
+
+textarea.tea-input {
+    height: auto;
+    min-height: 58px;
+    padding: 8px 10px;
+    resize: vertical;
+}
+
+.tea-input--sm {
+    width: 92px;
+}
+
+.tea-btn {
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .12s;
+    white-space: nowrap;
+}
+
+.tea-btn:hover {
+    background: var(--accent-hover);
+}
+
+.tea-btn:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.tea-btn--ghost {
+    background: transparent;
+    color: var(--accent-hover);
+    border-color: var(--border-strong);
+}
+
+.tea-btn--ghost:hover {
+    background: var(--surface-2);
+}
+
+.tea-btn--danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--border-strong);
+}
+
+.tea-btn--sm {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.tea-alert {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+}
+
+.tea-alert--err {
+    background: var(--danger-soft);
+    color: var(--danger);
+}
+
+.tea-alert--ok {
+    background: var(--ok-soft);
+    color: var(--ok);
+}
+
+.tea-muted {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.tea-spin {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 2px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: tea-spin .7s linear infinite;
+    vertical-align: -3px;
+    margin-right: 8px;
+}
+
+@keyframes tea-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---- pager ---- */
+
+.tea-pager {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+/* ---- menu list ---- */
+
+.tea-menu {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tea-menu + .tea-menu {
+    margin-top: 10px;
+}
+
+.tea-menu-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--surface);
+}
+
+.tea-menu-thumb {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+
+.tea-menu-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.tea-menu-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tea-menu-sub {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tea-menu-price {
+    font-weight: 600;
+    color: var(--accent-hover);
+    white-space: nowrap;
+}
+
+.tea-menu-body {
+    padding: 16px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 860px) {
+    .tea-menu-body { grid-template-columns: 1fr; }
+}
+
+.tea-menu-photo {
+    width: 100%;
+    border-radius: 10px;
+    object-fit: cover;
+    aspect-ratio: 1 / 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+}
+
+.tea-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.tea-chip {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    font-size: 11px;
+}
+
+.tea-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-faint);
+    margin: 14px 0 8px;
+}
+
+.tea-section-label:first-child {
+    margin-top: 0;
+}
+
+/* ---- table ---- */
+
+.tea-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tea-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--text-faint);
+    font-weight: 500;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tea-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.tea-table tr:last-child td {
+    border-bottom: none;
+}
+
+.tea-inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
