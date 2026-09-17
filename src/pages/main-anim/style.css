@@ -1,0 +1,46 @@
+* {
+    font-family: "Jost", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 500;
+    font-style: normal;
+    user-select: none;
+    margin: 0;
+}
+  
+.title {
+    font-size: 12em;
+    position: absolute;
+}
+
+.line {
+    height: 100%;
+    background-color: red;
+}
+
+.cardgame {
+    width: 23%;
+    height: 100%;
+    background-color: #fff;
+    border-radius: 25px;
+    transform: translate(0px, 100px);
+}
+
+.cards-container {
+    width: 90%;
+    height: 40%;
+    position: absolute;
+    bottom: 0px;
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+}
+
+/* 
+    cтек
+    проекты
+    гитхаб
+    тг
+    портфолио
+    опыт работы
+
+ */

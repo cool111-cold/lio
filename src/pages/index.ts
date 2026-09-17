@@ -4,3 +4,4 @@ export { MainPage } from './main';
 export { SalesPage } from './sales';
 export { SaroLoginPage } from './saroLogin';
 export { SaroMainPage } from './saroMain';
+export { MainAnimPage } from './main-anim';

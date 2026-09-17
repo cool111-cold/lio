@@ -1,17 +1,18 @@
 import './App.css';
 
 import { useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, MainAnimPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
   room: RoomPage,
   '3d': ThreeDPage,
   sales: SalesPage,
+  animain: MainAnimPage
 };
 
 function App() {
-  const [page, setPage] = useState('main');
+  const [page, setPage] = useState('animain');
   const ActivePage = PAGE_COMPONENTS[page];
 
   return (
