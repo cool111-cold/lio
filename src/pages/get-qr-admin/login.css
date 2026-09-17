@@ -1,0 +1,38 @@
+.admin-login-card {
+    width: 100%;
+    max-width: 360px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 32px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-login-tabs {
+    display: flex;
+    width: 100%;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 4px;
+    gap: 4px;
+}
+
+.admin-login-tab {
+    flex: 1;
+    border-radius: 8px;
+}
+
+.admin-login-tab-active {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-login-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}

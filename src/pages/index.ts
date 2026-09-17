@@ -4,3 +4,6 @@ export { MainPage } from './main';
 export { SalesPage } from './sales';
 export { SaroLoginPage } from './saroLogin';
 export { SaroMainPage } from './saroMain';
+export { GetQrPage } from './get-qr';
+export { GetQrAdminPage } from './get-qr-admin';
+export { GetQrAdminLoginPage } from './get-qr-admin/login';
