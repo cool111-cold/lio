@@ -1,4 +1,4 @@
-import { SubmitEvent, useEffect, useState } from "react"
+import { ReactNode, SubmitEvent, useEffect, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
@@ -33,6 +33,38 @@ interface ProfileState {
     subtitle: string;
     image: string;
     mail: string;
+}
+
+interface ModalProps {
+    title: string;
+    onClose: () => void;
+    children: ReactNode;
+}
+
+const Modal = ({title, onClose, children}: ModalProps) => {
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose()
+        }
+        document.addEventListener('keydown', onKeyDown)
+        return () => document.removeEventListener('keydown', onKeyDown)
+    }, [onClose])
+
+    return (
+        <div className="admin-modal-overlay" onClick={onClose}>
+            <div className="admin-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+                <div className="admin-modal-header">
+                    <Text size="l" color="white">{title}</Text>
+                    <button type="button" className="admin-modal-close" aria-label="Закрыть" onClick={onClose}>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                            <path d="M2 2l8 8M10 2l-8 8" />
+                        </svg>
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    )
 }
 
 interface LinkEditRowProps {
@@ -115,8 +147,8 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
-    const startEdit = (link: ApiLink) => setEditing({id: link.id, link: link.link, label: link.label})
-    const startCreate = () => setEditing({id: 'new', link: '', label: ''})
+    const startEdit = (link: ApiLink) => { setError(null); setEditing({id: link.id, link: link.link, label: link.label}) }
+    const startCreate = () => { setError(null); setEditing({id: 'new', link: '', label: ''}) }
     const cancelEdit = () => setEditing(null)
 
     const submitEdit = async (e: SubmitEvent) => {
@@ -152,6 +184,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
 
     const startEditProfile = () => {
         if (!store) return
+        setError(null)
         setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? ''})
     }
     const cancelEditProfile = () => {
@@ -259,65 +292,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         <PageComponent center={false}>
             <div className="admin-scroll">
                 <div className="admin-card">
-                    {editingProfile ? (
-                        <form className="admin-profile-edit" onSubmit={submitProfile}>
-                            <Input
-                                label="Название"
-                                value={editingProfile.title}
-                                onChange={(e) => setEditingProfile({...editingProfile, title: e.target.value})}
-                            />
-                            <Input
-                                label="Описание"
-                                value={editingProfile.subtitle}
-                                onChange={(e) => setEditingProfile({...editingProfile, subtitle: e.target.value})}
-                            />
-                            <Input
-                                label="Ссылка на аватар"
-                                placeholder="https://..."
-                                value={editingProfile.image}
-                                onChange={(e) => setEditingProfile({...editingProfile, image: e.target.value})}
-                            />
-                            <Input
-                                label="Почта"
-                                type="email"
-                                placeholder="you@example.com"
-                                value={editingProfile.mail}
-                                onChange={(e) => setEditingProfile({...editingProfile, mail: e.target.value})}
-                            />
-                            <div className="admin-edit-actions">
-                                <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={cancelEditProfile} disabled={saving}>Отмена</Button>
-                                <Button type="submit" variant="solid" textSize="s" disabled={saving}>
-                                    {saving ? 'Сохранение…' : 'Сохранить'}
-                                </Button>
-                            </div>
-
-                            <div className="admin-danger-zone">
-                                {!confirmDeleteAccount ? (
-                                    <button
-                                        type="button"
-                                        className="admin-edit-btn"
-                                        onClick={() => setConfirmDeleteAccount(true)}
-                                        disabled={saving || deletingAccount}
-                                    >
-                                        <Text size="xs" color="accent">Удалить аккаунт</Text>
-                                    </button>
-                                ) : (
-                                    <div className="admin-delete-confirm">
-                                        <Text size="xs" color="lightGray">Аккаунт и магазин будут удалены без возможности восстановления.</Text>
-                                        <div className="admin-edit-actions">
-                                            <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={() => setConfirmDeleteAccount(false)} disabled={deletingAccount}>
-                                                Отмена
-                                            </Button>
-                                            <Button type="button" variant="outline" textSize="s" textColor="accent" onClick={deleteAccount} disabled={deletingAccount}>
-                                                {deletingAccount ? 'Удаление…' : 'Да, удалить'}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </form>
-                    ) : (
-                        <>
+                    <>
                             {store.image && (
                                 <div className="get-qr-avatar-wrap">
                                     <img className="get-qr-avatar" src={store.image} alt={store.title} />
@@ -337,25 +312,10 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                                     <Text size="xs" color="lightGray">Открыть страницу</Text>
                                 </button>
                             </div>
-                        </>
-                    )}
+                    </>
 
                     <div className="admin-links">
                         {store.links.map((link) => {
-                            if (editing?.id === link.id) {
-                                return (
-                                    <LinkEditRow
-                                        key={link.id}
-                                        value={editing}
-                                        onChange={setEditing}
-                                        onSubmit={submitEdit}
-                                        onCancel={cancelEdit}
-                                        onDelete={() => deleteLink(link.id)}
-                                        saving={saving}
-                                    />
-                                )
-                            }
-
                             const iconSrc = resolveIcon(link.icon)
                             return (
                                 <div className="link-row admin-link-row" key={link.id}>
@@ -370,28 +330,92 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                                 </div>
                             )
                         })}
-
-                        {editing?.id === 'new' && (
-                            <LinkEditRow
-                                value={editing}
-                                onChange={setEditing}
-                                onSubmit={submitEdit}
-                                onCancel={cancelEdit}
-                                saving={saving}
-                            />
-                        )}
                     </div>
 
-                    {!editing && (
-                        <button type="button" className="link-row admin-add-row" onClick={startCreate}>
-                            <span className="link-icon admin-add-icon">+</span>
-                            <Text size="m" color="lightGray">Добавить ссылку</Text>
-                        </button>
-                    )}
+                    <button type="button" className="link-row admin-add-row" onClick={startCreate}>
+                        <span className="link-icon admin-add-icon">+</span>
+                        <Text size="m" color="lightGray">Добавить ссылку</Text>
+                    </button>
 
-                    {error && <Text size="xs" color="accent">{error}</Text>}
+                    {error && !editing && !editingProfile && <Text size="xs" color="accent">{error}</Text>}
                 </div>
             </div>
+
+            {editing && (
+                <Modal title={editing.id === 'new' ? 'Новая ссылка' : 'Редактирование ссылки'} onClose={cancelEdit}>
+                    <LinkEditRow
+                        value={editing}
+                        onChange={setEditing}
+                        onSubmit={submitEdit}
+                        onCancel={cancelEdit}
+                        onDelete={editing.id === 'new' ? undefined : () => deleteLink(editing.id as number)}
+                        saving={saving}
+                    />
+                    {error && <Text size="xs" color="accent">{error}</Text>}
+                </Modal>
+            )}
+
+            {editingProfile && (
+                <Modal title="Редактирование профиля" onClose={cancelEditProfile}>
+                    <form className="admin-profile-edit" onSubmit={submitProfile}>
+                        <Input
+                            label="Название"
+                            value={editingProfile.title}
+                            onChange={(e) => setEditingProfile({...editingProfile, title: e.target.value})}
+                        />
+                        <Input
+                            label="Описание"
+                            value={editingProfile.subtitle}
+                            onChange={(e) => setEditingProfile({...editingProfile, subtitle: e.target.value})}
+                        />
+                        <Input
+                            label="Ссылка на аватар"
+                            placeholder="https://..."
+                            value={editingProfile.image}
+                            onChange={(e) => setEditingProfile({...editingProfile, image: e.target.value})}
+                        />
+                        <Input
+                            label="Почта"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={editingProfile.mail}
+                            onChange={(e) => setEditingProfile({...editingProfile, mail: e.target.value})}
+                        />
+                        <div className="admin-edit-actions">
+                            <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={cancelEditProfile} disabled={saving}>Отмена</Button>
+                            <Button type="submit" variant="solid" textSize="s" disabled={saving}>
+                                {saving ? 'Сохранение…' : 'Сохранить'}
+                            </Button>
+                        </div>
+
+                        <div className="admin-danger-zone">
+                            {!confirmDeleteAccount ? (
+                                <button
+                                    type="button"
+                                    className="admin-edit-btn"
+                                    onClick={() => setConfirmDeleteAccount(true)}
+                                    disabled={saving || deletingAccount}
+                                >
+                                    <Text size="xs" color="accent">Удалить аккаунт</Text>
+                                </button>
+                            ) : (
+                                <div className="admin-delete-confirm">
+                                    <Text size="xs" color="lightGray">Аккаунт и магазин будут удалены без возможности восстановления.</Text>
+                                    <div className="admin-edit-actions">
+                                        <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={() => setConfirmDeleteAccount(false)} disabled={deletingAccount}>
+                                            Отмена
+                                        </Button>
+                                        <Button type="button" variant="outline" textSize="s" textColor="accent" onClick={deleteAccount} disabled={deletingAccount}>
+                                            {deletingAccount ? 'Удаление…' : 'Да, удалить'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </form>
+                    {error && <Text size="xs" color="accent">{error}</Text>}
+                </Modal>
+            )}
 
             {!editingProfile && !clientMail && (
                 <div className="admin-mail-notice">

@@ -231,7 +231,7 @@ export const MainQrPage = () => {
                         </div>
 
                         <div className="onboarding-title">
-                            <Text size="xl" animation>Одна карта — все ваши ссылки</Text>
+                            <Text size="xl" animation gradientWord="карте">Все ваши ссылки в одной карте</Text>
                         </div>
 
                         <div className="onboarding-subtitle">

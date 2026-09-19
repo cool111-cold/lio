@@ -154,6 +154,23 @@
     flex-shrink: 0;
 }
 
+@media (max-width: 560px) {
+    .onboarding-marquee-intro {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 24px;
+    }
+
+    .onboarding-marquee-audience {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .onboarding-audience-chip {
+        width: 100%;
+    }
+}
+
 .onboarding-audience-text {
     display: flex;
     flex-direction: column;

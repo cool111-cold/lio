@@ -21,6 +21,11 @@ const INITIAL_REGISTER: RegisterFormState = {mail: '', login: '', password: '', 
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
 
+const getCardFromPath = (): string | null => {
+    const match = window.location.pathname.match(/^\/admin\/([^/]+)/)
+    return match ? decodeURIComponent(match[1]) : null
+}
+
 const themeVars = {
     '--lio-text': '#f9f9f9',
     '--lio-input-bg': 'rgba(255, 255, 255, 0.05)',
@@ -72,7 +77,9 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
 
         setLoading(true)
         try {
-            const response = await fetch(`${API_BASE_URL}/${mode}`, {
+            const card = getCardFromPath()
+            const query = card ? `?card=${encodeURIComponent(card)}` : ''
+            const response = await fetch(`${API_BASE_URL}/${mode}${query}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(

@@ -6,3 +6,17 @@
   user-select: none;
   margin: 0;
 }
+
+.text-gradient-word {
+    background: linear-gradient(100deg, #ffffff 0%, #ffffff 25%, #8f8f8f 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: text-gradient-word-in 0.8s ease both;
+}
+
+@keyframes text-gradient-word-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
