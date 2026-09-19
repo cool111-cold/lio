@@ -3,7 +3,7 @@ import { PageComponent, Text, Button, Input } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
 
-const API_BASE_URL = 'https://lio-back-viww.onrender.com'
+const API_BASE_URL = 'http://127.0.0.1:8000'
 
 interface ApiLink {
     id: number;
@@ -11,6 +11,7 @@ interface ApiLink {
     link: string;
     icon: string | null;
     label: string;
+    metric: number;
 }
 
 interface StoreData {
@@ -80,6 +81,8 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
     const [editing, setEditing] = useState<EditingState | null>(null)
     const [editingProfile, setEditingProfile] = useState<ProfileState | null>(null)
     const [saving, setSaving] = useState(false)
+    const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
+    const [deletingAccount, setDeletingAccount] = useState(false)
 
     const authHeaders = {Authorization: `Bearer ${token}`}
 
@@ -151,7 +154,10 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         if (!store) return
         setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? ''})
     }
-    const cancelEditProfile = () => setEditingProfile(null)
+    const cancelEditProfile = () => {
+        setEditingProfile(null)
+        setConfirmDeleteAccount(false)
+    }
 
     const submitProfile = async (e: SubmitEvent) => {
         e.preventDefault()
@@ -207,6 +213,24 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
             setError('Не удалось удалить ссылку')
         } finally {
             setSaving(false)
+        }
+    }
+
+    const deleteAccount = async () => {
+        setDeletingAccount(true)
+        setError(null)
+        try {
+            const res = await fetch(`${API_BASE_URL}/delete-client`, {method: 'POST', headers: authHeaders})
+            if (res.status === 401) {
+                onUnauthorized?.()
+                return
+            }
+            if (!res.ok) throw new Error('failed')
+
+            onUnauthorized?.()
+        } catch {
+            setError('Не удалось удалить аккаунт')
+            setDeletingAccount(false)
         }
     }
 
@@ -266,6 +290,31 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                                     {saving ? 'Сохранение…' : 'Сохранить'}
                                 </Button>
                             </div>
+
+                            <div className="admin-danger-zone">
+                                {!confirmDeleteAccount ? (
+                                    <button
+                                        type="button"
+                                        className="admin-edit-btn"
+                                        onClick={() => setConfirmDeleteAccount(true)}
+                                        disabled={saving || deletingAccount}
+                                    >
+                                        <Text size="xs" color="accent">Удалить аккаунт</Text>
+                                    </button>
+                                ) : (
+                                    <div className="admin-delete-confirm">
+                                        <Text size="xs" color="lightGray">Аккаунт и магазин будут удалены без возможности восстановления.</Text>
+                                        <div className="admin-edit-actions">
+                                            <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={() => setConfirmDeleteAccount(false)} disabled={deletingAccount}>
+                                                Отмена
+                                            </Button>
+                                            <Button type="button" variant="outline" textSize="s" textColor="accent" onClick={deleteAccount} disabled={deletingAccount}>
+                                                {deletingAccount ? 'Удаление…' : 'Да, удалить'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </form>
                     ) : (
                         <>
@@ -311,7 +360,10 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                             return (
                                 <div className="link-row admin-link-row" key={link.id}>
                                     {iconSrc && <img className="link-icon" src={iconSrc} alt="" />}
-                                    <Text size="m" color="white">{link.label}</Text>
+                                    <div className="admin-link-info">
+                                        <Text size="m" color="white">{link.label}</Text>
+                                        <span className="admin-link-metric">{link.metric ?? 0} переход(ов)</span>
+                                    </div>
                                     <button type="button" className="admin-edit-btn" onClick={() => startEdit(link)}>
                                         <Text size="xs" color="lightGray">Изменить</Text>
                                     </button>

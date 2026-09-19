@@ -19,7 +19,7 @@ interface RegisterFormState {
 const INITIAL_LOGIN: LoginFormState = {login: '', password: ''}
 const INITIAL_REGISTER: RegisterFormState = {mail: '', login: '', password: '', confirmPassword: ''}
 
-const API_BASE_URL = 'https://lio-back-viww.onrender.com'
+const API_BASE_URL = 'http://127.0.0.1:8000'
 
 const themeVars = {
     '--lio-text': '#f9f9f9',

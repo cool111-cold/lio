@@ -3,11 +3,16 @@ import { PageComponent, Text } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
 
-const API_URL = 'https://lio-back-viww.onrender.com/get-links'
+const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_URL = `${API_BASE_URL}/get-links`
 
 const getStoreId = (): string => {
     const segments = window.location.pathname.split('/').filter(Boolean)
     return segments[segments.length - 1] ?? ''
+}
+
+const trackLinkClick = (linkId: number) => {
+    fetch(`${API_BASE_URL}/metric?link_id=${linkId}`, {method: 'POST'}).catch(() => {})
 }
 
 interface ApiLink {
@@ -26,10 +31,14 @@ interface StoreData {
     links: ApiLink[];
 }
 
-const LinkRow = ({icon, label, link}: ApiLink) => {
+const LinkRow = ({id, icon, label, link}: ApiLink) => {
     const iconSrc = resolveIcon(icon)
+    const handleClick = () => {
+        trackLinkClick(id)
+        window.open(link, "_blank", "noopener,noreferrer")
+    }
     return (
-        <div className="link-row" onClick={() => window.open(link, "_blank", "noopener,noreferrer")}>
+        <div className="link-row" onClick={handleClick}>
             {iconSrc && <img className="link-icon" src={iconSrc} alt="" />}
             <Text size="m" color="white">{label}</Text>
             <span className="link-arrow">→</span>
@@ -62,6 +71,7 @@ export const GetQrPage = () => {
 
     useEffect(() => {
         if (data && data.links.length === 1) {
+            trackLinkClick(data.links[0].id)
             window.location.href = data.links[0].link
         }
     }, [data])
@@ -69,7 +79,7 @@ export const GetQrPage = () => {
     if (error) {
         return (
             <PageComponent>
-                <Text size="s" color="lightGray">Не удалось загрузить ссылки</Text>
+                <Text size="s" color="lightGray">Не удалось загрузить ссылку</Text>
             </PageComponent>
         )
     }

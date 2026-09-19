@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -42,13 +42,23 @@ function App() {
   const [page, setPage] = useState('qr');
   const ActivePage = PAGE_COMPONENTS[page];
 
+  if (window.location.pathname === '/') {
+    return <MainQrPage />;
+  }
+
   if (window.location.pathname.startsWith('/admin')) {
     return <AdminGate />;
   }
 
-  return (
-    <ActivePage onNavigate={setPage} />
-  );
+  if (window.location.pathname.startsWith('/cards/')) {
+    return <CardsPage />;
+  }
+
+  if (/^\/\d+$/.test(window.location.pathname)) {
+    return <ActivePage onNavigate={setPage} />;
+  }
+
+  return <MainQrPage />;
 }
 
 // тесты пайплайны метрика переовод 
