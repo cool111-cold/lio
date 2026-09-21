@@ -3,7 +3,7 @@ import { PageComponent, Text } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://vapira.ru'
 const API_URL = `${API_BASE_URL}/get-links`
 
 const getStoreId = (): string => {
@@ -57,6 +57,7 @@ export const GetQrPage = () => {
     const [data, setData] = useState<StoreData | null>(null)
     const [error, setError] = useState(false)
     const [promoClosed, setPromoClosed] = useState(false)
+    const isAdmin = !!localStorage.getItem('qr_admin_token')
 
     useEffect(() => {
         const storeId = getStoreId()
@@ -120,8 +121,8 @@ export const GetQrPage = () => {
                 </div>
             </div>
             {!promoClosed && (
-                <div className="get-qr-promo" onClick={() => { window.location.href = '/' }}>
-                    <Text size="xs" color="lightGray">Хотите такую же карту?</Text>
+                <div className="get-qr-promo" onClick={() => { window.location.href = isAdmin ? '/admin' : '/' }}>
+                    <Text size="xs" color="lightGray">{isAdmin ? 'Войти в Админ-панель' : 'Хотите такую же карту?'}</Text>
                     <button
                         type="button"
                         className="get-qr-promo-close"

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { PageComponent, Text, Button } from "../../components"
 import './style.css'
 
-const API_BASE_URL = 'http://127.0.0.1:8000'
+const API_BASE_URL = 'http://vapira.ru'
 const ADMIN_TOKEN_KEY = 'qr_admin_token'
 
 const getCodeFromPath = (): string => {
