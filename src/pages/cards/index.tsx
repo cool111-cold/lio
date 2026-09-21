@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { PageComponent, Text, Button } from "../../components"
 import './style.css'
+import { API_BASE_URL } from '../../config'
 
-const API_BASE_URL = 'http://vapira.ru/api'
 const ADMIN_TOKEN_KEY = 'qr_admin_token'
 
 const getCodeFromPath = (): string => {

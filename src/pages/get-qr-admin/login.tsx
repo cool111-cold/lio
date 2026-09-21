@@ -1,6 +1,7 @@
 import { ChangeEvent, CSSProperties, SubmitEvent, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
 import './login.css'
+import { API_BASE_URL } from '../../config'
 
 type Mode = 'login' | 'register'
 
@@ -19,7 +20,6 @@ interface RegisterFormState {
 const INITIAL_LOGIN: LoginFormState = {login: '', password: ''}
 const INITIAL_REGISTER: RegisterFormState = {mail: '', login: '', password: '', confirmPassword: ''}
 
-const API_BASE_URL = 'http://vapira.ru/api'
 
 const getCardFromPath = (): string | null => {
     const match = window.location.pathname.match(/^\/admin\/([^/]+)/)

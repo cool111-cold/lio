@@ -2,8 +2,8 @@ import { useEffect, useState } from "react"
 import { PageComponent, Text } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
+import { API_BASE_URL } from '../../config'
 
-const API_BASE_URL = 'http://vapira.ru/api'
 const API_URL = `${API_BASE_URL}/get-links`
 
 const getStoreId = (): string => {

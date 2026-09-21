@@ -2,8 +2,8 @@ import { ReactNode, SubmitEvent, useEffect, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
+import { API_BASE_URL } from '../../config'
 
-const API_BASE_URL = 'http://vapira.ru/api'
 
 interface ApiLink {
     id: number;
