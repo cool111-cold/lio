@@ -19,7 +19,7 @@ interface RegisterFormState {
 const INITIAL_LOGIN: LoginFormState = {login: '', password: ''}
 const INITIAL_REGISTER: RegisterFormState = {mail: '', login: '', password: '', confirmPassword: ''}
 
-const API_BASE_URL = 'http://vapira.ru'
+const API_BASE_URL = 'http://vapira.ru/api'
 
 const getCardFromPath = (): string | null => {
     const match = window.location.pathname.match(/^\/admin\/([^/]+)/)

@@ -3,7 +3,7 @@ import { PageComponent, Text, Button, Input } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
 
-const API_BASE_URL = 'http://vapira.ru'
+const API_BASE_URL = 'http://vapira.ru/api'
 
 interface ApiLink {
     id: number;

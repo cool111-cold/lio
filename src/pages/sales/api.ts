@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://vapira.ru'
+export const API_BASE_URL = 'http://vapira.ru/api'
 
 /** Один элемент массива `condition` / `product_id` — произвольный словарь. */
 export type AnyDict = Record<string, unknown>

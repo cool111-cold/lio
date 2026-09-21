@@ -3,7 +3,7 @@ import { PageComponent, Text } from "../../components"
 import { resolveIcon } from "../../helpers"
 import './style.css'
 
-const API_BASE_URL = 'http://vapira.ru'
+const API_BASE_URL = 'http://vapira.ru/api'
 const API_URL = `${API_BASE_URL}/get-links`
 
 const getStoreId = (): string => {
