@@ -1,8 +1,25 @@
 import { ReactNode, SubmitEvent, useEffect, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
-import { resolveIcon } from "../../helpers"
+import { resolveIcon, resolveAssetUrl } from "../../helpers"
 import './style.css'
 import { API_BASE_URL } from '../../config'
+
+const pluralize = ({count, forms} : {count: number, forms: any}) => {
+        const pr = new Intl.PluralRules('ru-RU');
+        const rule = pr.select(count);
+      
+        switch (rule) {
+          case 'one':
+            return `${count} ${forms.one}`; 
+          case 'few':
+            return `${count} ${forms.few}`; 
+          case 'many':
+          default:
+            return `${count} ${forms.many}`; 
+        }
+}
+
+  
 
 
 interface ApiLink {
@@ -26,6 +43,8 @@ interface EditingState {
     id: number | 'new';
     link: string;
     label: string;
+    icon: string | null;
+    imageFile: File | null;
 }
 
 interface ProfileState {
@@ -33,6 +52,7 @@ interface ProfileState {
     subtitle: string;
     image: string;
     mail: string;
+    imageFile: File | null;
 }
 
 interface ModalProps {
@@ -67,6 +87,50 @@ const Modal = ({title, onClose, children}: ModalProps) => {
     )
 }
 
+interface ImagePickerProps {
+    file: File | null;
+    fallbackSrc: string | null;
+    onChange: (file: File | null) => void;
+    shape?: 'circle' | 'square';
+    size?: number;
+    label?: string;
+}
+
+const ImagePicker = ({file, fallbackSrc, onChange, shape = 'circle', size = 96, label = 'Изменить'}: ImagePickerProps) => {
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (!file) {
+            setPreviewUrl(null)
+            return
+        }
+        const url = URL.createObjectURL(file)
+        setPreviewUrl(url)
+        return () => URL.revokeObjectURL(url)
+    }, [file])
+
+    const src = previewUrl ?? fallbackSrc
+
+    return (
+        <label className={`image-picker image-picker-${shape}`} style={{width: size, height: size}}>
+            <input
+                type="file"
+                accept="image/*"
+                className="image-picker-input"
+                onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+            />
+            {src ? (
+                <img className="image-picker-preview" src={src} alt="" />
+            ) : (
+                <span className="image-picker-plus">+</span>
+            )}
+            <span className="image-picker-overlay">
+                <Text size="xs" color="white">{label}</Text>
+            </span>
+        </label>
+    )
+}
+
 interface LinkEditRowProps {
     value: EditingState;
     onChange: (value: EditingState) => void;
@@ -78,6 +142,17 @@ interface LinkEditRowProps {
 
 const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: LinkEditRowProps) => (
     <form className="admin-edit-row" onSubmit={onSubmit}>
+        <div className="admin-edit-image-row">
+            <ImagePicker
+                file={value.imageFile}
+                fallbackSrc={value.icon ? resolveIcon(value.icon) : null}
+                onChange={(file) => onChange({...value, imageFile: file})}
+                shape="square"
+                size={64}
+                label="Фото"
+            />
+            <Text size="xs" color="lightGray">Своя иконка для ссылки (необязательно)</Text>
+        </div>
         <Input
             placeholder="https://..."
             value={value.link}
@@ -88,6 +163,7 @@ const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: Li
             value={value.label}
             onChange={(e) => onChange({...value, label: e.target.value})}
         />
+        {!value.label && !value.icon && !value.imageFile && <Text size="xs" color="lightGray">Изображение и название автоматически подберем из нашей базы</Text>}
         <div className="admin-edit-actions">
             {onDelete && (
                 <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={onDelete} disabled={saving}>Удалить</Button>
@@ -147,8 +223,8 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
 
-    const startEdit = (link: ApiLink) => { setError(null); setEditing({id: link.id, link: link.link, label: link.label}) }
-    const startCreate = () => { setError(null); setEditing({id: 'new', link: '', label: ''}) }
+    const startEdit = (link: ApiLink) => { setError(null); setEditing({id: link.id, link: link.link, label: link.label, icon: link.icon, imageFile: null}) }
+    const startCreate = () => { setError(null); setEditing({id: 'new', link: '', label: '', icon: null, imageFile: null}) }
     const cancelEdit = () => setEditing(null)
 
     const submitEdit = async (e: SubmitEvent) => {
@@ -166,7 +242,13 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 ? `${API_BASE_URL}/create-link?${params.toString()}`
                 : `${API_BASE_URL}/update-link?link_id=${editing.id}&${params.toString()}`
 
-            const res = await fetch(url, {method: 'POST', headers: authHeaders})
+            let body: FormData | undefined
+            if (editing.imageFile) {
+                body = new FormData()
+                body.append('image', editing.imageFile)
+            }
+
+            const res = await fetch(url, {method: 'POST', headers: authHeaders, body})
             if (res.status === 401) {
                 onUnauthorized?.()
                 return
@@ -185,7 +267,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
     const startEditProfile = () => {
         if (!store) return
         setError(null)
-        setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? ''})
+        setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? '', imageFile: null})
     }
     const cancelEditProfile = () => {
         setEditingProfile(null)
@@ -199,10 +281,19 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         setSaving(true)
         setError(null)
         try {
+            const body = new FormData()
+            body.append('title', editingProfile.title)
+            body.append('subtitle', editingProfile.subtitle)
+            if (editingProfile.imageFile) {
+                body.append('image', editingProfile.imageFile)
+            } else if (editingProfile.image) {
+                body.append('image', editingProfile.image)
+            }
+
             const storeRes = await fetch(`${API_BASE_URL}/update-store?store_id=${store.id}`, {
                 method: 'POST',
-                headers: {...authHeaders, 'Content-Type': 'application/json'},
-                body: JSON.stringify({title: editingProfile.title, subtitle: editingProfile.subtitle, image: editingProfile.image}),
+                headers: authHeaders,
+                body,
             })
             if (storeRes.status === 401) {
                 onUnauthorized?.()
@@ -295,7 +386,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                     <>
                             {store.image && (
                                 <div className="get-qr-avatar-wrap">
-                                    <img className="get-qr-avatar" src={store.image} alt={store.title} />
+                                    <img className="get-qr-avatar" src={resolveAssetUrl(store.image)} alt={store.title} />
                                 </div>
                             )}
                             <Text size="l" color="white">{store.title}</Text>
@@ -322,7 +413,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                                     {iconSrc && <img className="link-icon" src={iconSrc} alt="" />}
                                     <div className="admin-link-info">
                                         <Text size="m" color="white">{link.label}</Text>
-                                        <span className="admin-link-metric">{link.metric ?? 0} переход(ов)</span>
+                                        <span className="admin-link-metric">{pluralize({count: link.metric ?? 0, forms: {one: "переход", few: "перехода", many: "переходов"}})}</span>
                                     </div>
                                     <button type="button" className="admin-edit-btn" onClick={() => startEdit(link)}>
                                         <Text size="xs" color="lightGray">Изменить</Text>
@@ -358,6 +449,16 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
             {editingProfile && (
                 <Modal title="Редактирование профиля" onClose={cancelEditProfile}>
                     <form className="admin-profile-edit" onSubmit={submitProfile}>
+                        <div className="admin-profile-image-row">
+                            <ImagePicker
+                                file={editingProfile.imageFile}
+                                fallbackSrc={resolveAssetUrl(editingProfile.image) || null}
+                                onChange={(file) => setEditingProfile({...editingProfile, imageFile: file})}
+                                shape="circle"
+                                size={96}
+                                label="Изменить фото"
+                            />
+                        </div>
                         <Input
                             label="Название"
                             value={editingProfile.title}
@@ -367,12 +468,6 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                             label="Описание"
                             value={editingProfile.subtitle}
                             onChange={(e) => setEditingProfile({...editingProfile, subtitle: e.target.value})}
-                        />
-                        <Input
-                            label="Ссылка на аватар"
-                            placeholder="https://..."
-                            value={editingProfile.image}
-                            onChange={(e) => setEditingProfile({...editingProfile, image: e.target.value})}
                         />
                         <Input
                             label="Почта"

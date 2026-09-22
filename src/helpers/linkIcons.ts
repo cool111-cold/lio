@@ -1,3 +1,4 @@
+import { resolveAssetUrl } from './assetUrl'
 import defIcon from '../pages/get-qr/icons/def.svg'
 import tgIcon from '../pages/get-qr/icons/tg.svg'
 import avitoIcon from '../pages/get-qr/icons/avito.png'
@@ -19,5 +20,6 @@ const ICONS: Record<string, string> = {
 
 export const resolveIcon = (path: string | null | undefined): string => {
     if (!path) return defIcon
-    return ICONS[path.split('/').pop() ?? ''] ?? defIcon
+    const filename = path.split('/').pop() ?? ''
+    return ICONS[filename] ?? resolveAssetUrl(path)
 }

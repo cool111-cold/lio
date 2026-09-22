@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { PageComponent, Text } from "../../components"
-import { resolveIcon } from "../../helpers"
+import { resolveIcon, resolveAssetUrl } from "../../helpers"
 import './style.css'
 import { API_BASE_URL } from '../../config'
 
@@ -108,7 +108,7 @@ export const GetQrPage = () => {
                 <div className="get-qr-card">
                     {data.image && (
                         <div className="get-qr-avatar-wrap">
-                            <img className="get-qr-avatar" src={data.image} alt={data.title} />
+                            <img className="get-qr-avatar" src={resolveAssetUrl(data.image)} alt={data.title} />
                         </div>
                     )}
                     {data.title && <Text size="l" color="white">{data.title}</Text>}

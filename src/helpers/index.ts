@@ -1,5 +1,6 @@
 export { colors } from './colors'
 export { resolveIcon } from './linkIcons'
+export { resolveAssetUrl } from './assetUrl'
 export { DEFAULT_LANGUAGE, LANGUAGES, getText } from './text'
 export type { Language, TextKey } from './text'
 export { PAGES } from './navigation'
