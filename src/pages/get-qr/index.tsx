@@ -81,7 +81,7 @@ export const GetQrPage = () => {
     if (error) {
         return (
             <PageComponent>
-                <Text size="s" color="lightGray">Не удалось загрузить ссылку</Text>
+                <Text size="m" color="lightGray">Не нашли такую ссылку</Text>
             </PageComponent>
         )
     }

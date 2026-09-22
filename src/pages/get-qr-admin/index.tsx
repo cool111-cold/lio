@@ -4,6 +4,15 @@ import { resolveIcon, resolveAssetUrl } from "../../helpers"
 import './style.css'
 import { API_BASE_URL } from '../../config'
 
+const extractErrorDetail = async (res: Response): Promise<string | null> => {
+    try {
+        const data = await res.json()
+        return typeof data?.detail === 'string' ? data.detail : null
+    } catch {
+        return null
+    }
+}
+
 const pluralize = ({count, forms} : {count: number, forms: any}) => {
         const pr = new Intl.PluralRules('ru-RU');
         const rule = pr.select(count);
@@ -161,6 +170,7 @@ const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: Li
         <Input
             placeholder="Название (необязательно)"
             value={value.label}
+            maxLength={20}
             onChange={(e) => onChange({...value, label: e.target.value})}
         />
         {!value.label && !value.icon && !value.imageFile && <Text size="xs" color="lightGray">Изображение и название автоматически подберем из нашей базы</Text>}
@@ -253,12 +263,12 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 onUnauthorized?.()
                 return
             }
-            if (!res.ok) throw new Error('failed')
+            if (!res.ok) throw new Error((await extractErrorDetail(res)) ?? '')
 
             setEditing(null)
             await loadStore()
-        } catch {
-            setError('Не удалось сохранить ссылку')
+        } catch (err) {
+            setError(err instanceof Error && err.message ? err.message : 'Не удалось сохранить ссылку')
         } finally {
             setSaving(false)
         }
@@ -299,7 +309,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 onUnauthorized?.()
                 return
             }
-            if (!storeRes.ok) throw new Error('failed')
+            if (!storeRes.ok) throw new Error((await extractErrorDetail(storeRes)) ?? '')
 
             const mailRes = await fetch(`${API_BASE_URL}/update-mail?mail=${encodeURIComponent(editingProfile.mail)}`, {
                 method: 'POST',
@@ -309,12 +319,12 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 onUnauthorized?.()
                 return
             }
-            if (!mailRes.ok) throw new Error('failed')
+            if (!mailRes.ok) throw new Error((await extractErrorDetail(mailRes)) ?? '')
 
             setEditingProfile(null)
             await loadStore()
-        } catch {
-            setError('Не удалось сохранить профиль')
+        } catch (err) {
+            setError(err instanceof Error && err.message ? err.message : 'Не удалось сохранить профиль')
         } finally {
             setSaving(false)
         }
@@ -485,14 +495,24 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
 
                         <div className="admin-danger-zone">
                             {!confirmDeleteAccount ? (
-                                <button
-                                    type="button"
-                                    className="admin-edit-btn"
-                                    onClick={() => setConfirmDeleteAccount(true)}
-                                    disabled={saving || deletingAccount}
-                                >
-                                    <Text size="xs" color="accent">Удалить аккаунт</Text>
-                                </button>
+                                <div className="admin-edit-actions">
+                                    <button
+                                        type="button"
+                                        className="admin-edit-btn"
+                                        onClick={() => onUnauthorized?.()}
+                                        disabled={saving || deletingAccount}
+                                    >
+                                        <Text size="xs" color="lightGray">Выйти</Text>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="admin-edit-btn"
+                                        onClick={() => setConfirmDeleteAccount(true)}
+                                        disabled={saving || deletingAccount}
+                                    >
+                                        <Text size="xs" color="accent">Удалить аккаунт</Text>
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="admin-delete-confirm">
                                     <Text size="xs" color="lightGray">Аккаунт и магазин будут удалены без возможности восстановления.</Text>

@@ -59,7 +59,7 @@ export const CardsPage = () => {
     if (status === 'error') {
         return (
             <PageComponent>
-                <Text size="s" color="lightGray">Не удалось найти карту</Text>
+                <Text size="m" color="lightGray">Не удалось найти такую карту</Text>
             </PageComponent>
         )
     }

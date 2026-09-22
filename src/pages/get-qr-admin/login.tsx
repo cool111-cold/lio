@@ -96,7 +96,7 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
             const data = await response.json()
             onAuthenticated?.(data.access_token)
         } catch {
-            setError(mode === 'login' ? 'Неверный логин или пароль' : 'Не удалось зарегистрироваться')
+            setError(mode === 'login' ? 'Неверный логин или пароль' : getCardFromPath() ? 'Не удалось зарегистрироваться' : 'Пожалуйста, приобретите карту для регистрации или отсканируйте уже имеющуюся')
         } finally {
             setLoading(false)
         }
