@@ -1,0 +1,135 @@
+.crm-card {
+    max-width: 640px;
+}
+
+/* Карточка растянута на высоту экрана — без этого длинный список сжимает табы (у них overflow, min-height схлопывается в 0) */
+.crm-card > *,
+.crm-list > * {
+    flex-shrink: 0;
+}
+
+.crm-tabs {
+    width: 100%;
+    display: flex;
+    gap: 4px;
+    margin-top: 16px;
+    padding: 4px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.crm-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.crm-tab {
+    flex: 1 0 auto;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease;
+}
+
+.crm-tab:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.crm-tab-active,
+.crm-tab-active:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.crm-tab p {
+    white-space: nowrap;
+}
+
+.crm-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 6px;
+    text-align: left;
+}
+
+.crm-list-status {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.crm-pager {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.crm-row-actions,
+.crm-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.crm-thumb-empty {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-add-row:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.crm-code-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.crm-code-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 16px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.crm-code-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.crm-code-status-free {
+    color: #A8E10C;
+    background: rgba(168, 225, 12, 0.1);
+    border: 1px solid rgba(168, 225, 12, 0.4);
+}
+
+.crm-code-status-busy {
+    color: #FF9F43;
+    background: rgba(255, 159, 67, 0.1);
+    border: 1px solid rgba(255, 159, 67, 0.4);
+    transition: background 0.2s ease;
+}
+
+.crm-code-status-busy:hover {
+    background: rgba(255, 159, 67, 0.2);
+}

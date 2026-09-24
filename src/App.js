@@ -1,7 +1,7 @@
 import './App.css';
 
-import { useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage } from './pages';
+import { useCallback, useState } from 'react';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -38,6 +38,30 @@ const AdminGate = () => {
   );
 };
 
+const CRM_TOKEN_KEY = 'crm_token';
+
+const CrmGate = () => {
+  const [token, setToken] = useState(() => localStorage.getItem(CRM_TOKEN_KEY));
+
+  const handleUnauthorized = useCallback(() => {
+    localStorage.removeItem(CRM_TOKEN_KEY);
+    setToken(null);
+  }, []);
+
+  if (!token) {
+    return (
+      <CrmLoginPage
+        onAuthenticated={(newToken) => {
+          localStorage.setItem(CRM_TOKEN_KEY, newToken);
+          setToken(newToken);
+        }}
+      />
+    );
+  }
+
+  return <CrmPage token={token} onUnauthorized={handleUnauthorized} />;
+};
+
 function App() {
   const [page, setPage] = useState('qr');
   const ActivePage = PAGE_COMPONENTS[page];
@@ -48,6 +72,10 @@ function App() {
 
   if (window.location.pathname.startsWith('/admin')) {
     return <AdminGate />;
+  }
+
+  if (window.location.pathname.startsWith('/crm')) {
+    return <CrmGate />;
   }
 
   if (window.location.pathname.startsWith('/cards/')) {

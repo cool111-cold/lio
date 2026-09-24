@@ -94,7 +94,7 @@ interface ModalProps {
     children: ReactNode;
 }
 
-const Modal = ({title, onClose, children}: ModalProps) => {
+export const Modal = ({title, onClose, children}: ModalProps) => {
     useEffect(() => {
         const onKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose()

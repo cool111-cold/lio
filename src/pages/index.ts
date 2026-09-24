@@ -9,3 +9,5 @@ export { CardsPage } from './cards';
 export { MainQrPage } from './main-qr';
 export { GetQrAdminPage } from './get-qr-admin';
 export { GetQrAdminLoginPage } from './get-qr-admin/login';
+export { CrmPage } from './crm';
+export { CrmLoginPage } from './crm/login';
