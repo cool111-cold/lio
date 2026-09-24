@@ -177,3 +177,55 @@
         transform: rotate(360deg);
     }
 }
+
+.get-qr-card-cover {
+    max-width: none;
+    padding: 0 0 96px;
+}
+
+.get-qr-card-cover .get-qr-links {
+    max-width: 400px;
+    box-sizing: border-box;
+    padding: 0 24px;
+}
+
+.get-qr-cover {
+    position: relative;
+    width: 100%;
+    margin-bottom: 8px;
+    aspect-ratio: 1 / 1;
+    max-height: 70vh;
+    overflow: hidden;
+}
+
+.get-qr-cover-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.get-qr-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.7) 75%, #000 100%);
+}
+
+.get-qr-cover-text {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: 20px;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.get-qr-cover-text-plain {
+    position: static;
+    padding-top: 64px;
+}

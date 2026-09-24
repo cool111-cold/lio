@@ -338,8 +338,6 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
             body.append('subtitle', editingProfile.subtitle)
             if (editingProfile.imageFile) {
                 body.append('image', editingProfile.imageFile)
-            } else if (editingProfile.image) {
-                body.append('image', editingProfile.image)
             }
 
             const storeRes = await fetch(`${API_BASE_URL}/update-store?store_id=${store.id}`, {

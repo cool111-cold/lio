@@ -55,7 +55,7 @@ const USE_CASES: UseCase[] = [
     {icon: menuIcon, color: '#FFC94D', label: 'Меню кафе и ресторанов'},
     {icon: businessCardIcon, color: '#5CC8FF', label: 'Цифровая визитка'},
     {icon: ticketsIcon, color: '#F472B6', label: 'Билеты и мероприятия'},
-    {icon: tipsIcon, color: '#A8E10C', label: 'Чаевые в клик'},
+    {icon: tipsIcon, color: '#A8E10C', label: 'Быстрые переводы'},
     {icon: linkIcon, color: '#A78BFA', label: 'Ссылки на соцсети'},
     {icon: contactsIcon, color: '#FF8A7A', label: 'Контакты для записи'},
     {icon: growthIcon, color: '#A8E10C', label: 'Продвижение бренда'},
@@ -156,12 +156,16 @@ const ADVANTAGES: Advantage[] = [
     {
         icon: scenariesIcon, color: '#A78BFA',
         title: 'Безграничные сценарии',
-        description: 'От визитки на чаевые и ссылки на отзыв до личной многоразовой визитки или тизера нового альбома',
+        description: 'Сохраните ссылку на личный перевод или тизер нового альбома',
     },
 ]
 
 const goToAdmin = () => {
     window.location.href = '/admin'
+}
+
+const goToCard = () => {
+    window.location.href = '/1'
 }
 
 const scrollToSection = (id: string) => {
@@ -241,7 +245,7 @@ export const MainQrPage = () => {
                         </div>
 
                         <div className="onboarding-hero-actions">
-                            <Button variant="solid" textSize="s" onClick={() => scrollToSection('onboarding-steps-section')}>Перейти к настройке</Button>
+                            <Button variant="solid" textSize="s" onClick={goToCard}>Наша карта</Button>
                             <Button variant="outline" textSize="s" textColor="white" onClick={() => scrollToSection('onboarding-designs-section')}>Оформить сейчас</Button>
                         </div>
                     </div>
