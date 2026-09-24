@@ -1,4 +1,4 @@
-import { RefObject, useEffect } from "react"
+import { ReactNode, RefObject, useEffect } from "react"
 import { gsap } from "gsap"
 import { Text } from "../../../components"
 import { resolveIcon } from "../../../helpers"
@@ -12,16 +12,36 @@ export interface ApiLink {
     id: number;
     store_id: number;
     link: string;
-    icon: string;
+    icon: string | null;
     label: string;
 }
+
+export type PageStyle = 'default' | 'cover'
+
+export const PAGE_STYLES: {key: PageStyle; label: string}[] = [
+    {key: 'default', label: 'Классический'},
+    {key: 'cover', label: 'Обложка'},
+]
+
+// Бэкенд может вернуть неизвестное значение — тогда показываем стиль по умолчанию
+export const normalizePageStyle = (style: string | null | undefined): PageStyle =>
+    PAGE_STYLES.some((s) => s.key === style) ? style as PageStyle : 'default'
 
 export interface StoreData {
     id: number;
     title: string;
     subtitle: string;
     image: string;
+    style?: string;
     links: ApiLink[];
+}
+
+export interface StoreStyleProps {
+    data: StoreData;
+    // Вместо публичного списка ссылок — например, редактируемые строки в админке
+    children?: ReactNode;
+    className?: string;
+    animateLinks?: boolean;
 }
 
 export const LinkRow = ({id, icon, label, link}: ApiLink) => {
@@ -39,8 +59,9 @@ export const LinkRow = ({id, icon, label, link}: ApiLink) => {
     )
 }
 
-export const useLinksAppear = (rootRef: RefObject<HTMLElement | null>) => {
+export const useLinksAppear = (rootRef: RefObject<HTMLElement | null>, enabled = true) => {
     useEffect(() => {
+        if (!enabled) return
         const ctx = gsap.context(() => {
             gsap.set('.link-row', {transition: 'none'})
             gsap.from('.link-row', {
@@ -54,5 +75,5 @@ export const useLinksAppear = (rootRef: RefObject<HTMLElement | null>) => {
             })
         }, rootRef)
         return () => ctx.revert()
-    }, [rootRef])
+    }, [rootRef, enabled])
 }

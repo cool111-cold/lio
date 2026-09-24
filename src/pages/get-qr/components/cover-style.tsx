@@ -1,14 +1,14 @@
 import { useRef } from "react"
 import { Text } from "../../../components"
 import { resolveAssetUrl } from "../../../helpers"
-import { LinkRow, StoreData, useLinksAppear } from "./link-row"
+import { LinkRow, StoreStyleProps, useLinksAppear } from "./link-row"
 
-export const CoverStyle = ({data}: {data: StoreData}) => {
+export const CoverStyle = ({data, children, className, animateLinks = true}: StoreStyleProps) => {
     const rootRef = useRef<HTMLDivElement>(null)
-    useLinksAppear(rootRef)
+    useLinksAppear(rootRef, animateLinks)
 
     return (
-        <div ref={rootRef} className="get-qr-card get-qr-card-cover">
+        <div ref={rootRef} className={`get-qr-card get-qr-card-cover${className ? ` ${className}` : ''}`}>
             {data.image ? (
                 <div className="get-qr-cover">
                     <img className="get-qr-cover-image" src={resolveAssetUrl(data.image)} alt={data.title} />
@@ -24,7 +24,7 @@ export const CoverStyle = ({data}: {data: StoreData}) => {
                 </div>
             )}
             <div className="get-qr-links">
-                {data.links.map((link) => (
+                {children ?? data.links.map((link) => (
                     <LinkRow key={link.id} {...link} />
                 ))}
             </div>

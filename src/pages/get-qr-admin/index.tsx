@@ -3,6 +3,8 @@ import { PageComponent, Text, Button, Input } from "../../components"
 import { resolveIcon, resolveAssetUrl } from "../../helpers"
 import settingIcon from '../../assets/icons/setting-icon.svg'
 import logoutIcon from '../../assets/icons/logout-icon.svg'
+import { PAGE_STYLES, PageStyle, normalizePageStyle } from '../get-qr/components/link-row'
+import { StoreStyle } from '../get-qr/components/store-style'
 import './style.css'
 import { API_BASE_URL } from '../../config'
 
@@ -47,6 +49,7 @@ interface StoreData {
     title: string;
     subtitle: string;
     image: string;
+    style?: string;
     links: ApiLink[];
 }
 
@@ -63,6 +66,7 @@ interface ProfileState {
     subtitle: string;
     image: string;
     mail: string;
+    style: PageStyle;
     imageFile: File | null;
 }
 
@@ -319,7 +323,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
     const startEditProfile = () => {
         if (!store) return
         setError(null)
-        setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? '', imageFile: null})
+        setEditingProfile({title: store.title, subtitle: store.subtitle, image: store.image, mail: clientMail ?? '', style: normalizePageStyle(store.style), imageFile: null})
     }
     const cancelEditProfile = () => {
         setEditingProfile(null)
@@ -360,6 +364,18 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 return
             }
             if (!mailRes.ok) throw new Error((await extractErrorDetail(mailRes)) ?? '')
+
+            if (editingProfile.style !== normalizePageStyle(store.style)) {
+                const styleRes = await fetch(`${API_BASE_URL}/update-style?store_id=${store.id}&new_style=${editingProfile.style}`, {
+                    method: 'POST',
+                    headers: authHeaders,
+                })
+                if (styleRes.status === 401) {
+                    onUnauthorized?.()
+                    return
+                }
+                if (!styleRes.ok) throw new Error((await extractErrorDetail(styleRes)) ?? '')
+            }
 
             setEditingProfile(null)
             await loadStore()
@@ -650,43 +666,32 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
             )}
 
             <div className="admin-scroll">
-                <div className="admin-card">
-                    <>
-                            {store.image && (
-                                <div className="get-qr-avatar-wrap">
-                                    <img className="get-qr-avatar" src={resolveAssetUrl(store.image)} alt={store.title} />
+                <StoreStyle data={store} className="admin-store-card" animateLinks={false}>
+                    <div className="admin-profile-actions">
+                        <button
+                            type="button"
+                            className="admin-edit-btn"
+                            onClick={() => window.open(`${window.location.origin}/${store.id}`, '_blank', 'noopener,noreferrer')}
+                        >
+                            <Text size="xs" color="lightGray">Открыть страницу</Text>
+                        </button>
+                    </div>
+
+                    {store.links.map((link) => {
+                        const iconSrc = resolveIcon(link.icon)
+                        return (
+                            <div className="link-row admin-link-row" key={link.id}>
+                                {iconSrc && <img className="link-icon" src={iconSrc} alt="" />}
+                                <div className="admin-link-info">
+                                    <Text size="m" color="white">{link.label}</Text>
+                                    <span className="admin-link-metric">{pluralize({count: link.metric ?? 0, forms: {one: "переход", few: "перехода", many: "переходов"}})}</span>
                                 </div>
-                            )}
-                            <Text size="l" color="white">{store.title}</Text>
-                            {store.subtitle && <Text size="s" color="lightGray">{store.subtitle}</Text>}
-                            <div className="admin-profile-actions">
-                                <button
-                                    type="button"
-                                    className="admin-edit-btn"
-                                    onClick={() => window.open(`${window.location.origin}/${store.id}`, '_blank', 'noopener,noreferrer')}
-                                >
-                                    <Text size="xs" color="lightGray">Открыть страницу</Text>
+                                <button type="button" className="admin-edit-btn" onClick={() => startEdit(link)}>
+                                    <Text size="xs" color="lightGray">Изменить</Text>
                                 </button>
                             </div>
-                    </>
-
-                    <div className="admin-links">
-                        {store.links.map((link) => {
-                            const iconSrc = resolveIcon(link.icon)
-                            return (
-                                <div className="link-row admin-link-row" key={link.id}>
-                                    {iconSrc && <img className="link-icon" src={iconSrc} alt="" />}
-                                    <div className="admin-link-info">
-                                        <Text size="m" color="white">{link.label}</Text>
-                                        <span className="admin-link-metric">{pluralize({count: link.metric ?? 0, forms: {one: "переход", few: "перехода", many: "переходов"}})}</span>
-                                    </div>
-                                    <button type="button" className="admin-edit-btn" onClick={() => startEdit(link)}>
-                                        <Text size="xs" color="lightGray">Изменить</Text>
-                                    </button>
-                                </div>
-                            )
-                        })}
-                    </div>
+                        )
+                    })}
 
                     <button type="button" className="link-row admin-add-row" onClick={startCreate}>
                         <span className="link-icon admin-add-icon">+</span>
@@ -694,7 +699,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                     </button>
 
                     {error && !editing && !editingProfile && <Text size="xs" color="accent">{error}</Text>}
-                </div>
+                </StoreStyle>
             </div>
 
             {editing && (
@@ -741,6 +746,29 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                             value={editingProfile.mail}
                             onChange={(e) => setEditingProfile({...editingProfile, mail: e.target.value})}
                         />
+                        <div className="admin-style-picker">
+                            <Text size="xs" color="lightGray">Стиль страницы</Text>
+                            <div className="admin-style-options">
+                                {PAGE_STYLES.map(({key, label}) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        className={`admin-style-option${editingProfile.style === key ? ' admin-style-option-active' : ''}`}
+                                        aria-pressed={editingProfile.style === key}
+                                        onClick={() => setEditingProfile({...editingProfile, style: key})}
+                                    >
+                                        <span className={`admin-style-preview admin-style-preview-${key}`}>
+                                            <span className="admin-style-preview-media" />
+                                            <span className="admin-style-preview-line" />
+                                            <span className="admin-style-preview-line admin-style-preview-line-short" />
+                                            <span className="admin-style-preview-row" />
+                                            <span className="admin-style-preview-row" />
+                                        </span>
+                                        <Text size="xs" color={editingProfile.style === key ? 'white' : 'lightGray'}>{label}</Text>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <div className="admin-edit-actions">
                             <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={cancelEditProfile} disabled={saving}>Отмена</Button>
                             <Button type="submit" variant="solid" textSize="s" disabled={saving}>

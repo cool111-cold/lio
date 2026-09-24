@@ -203,6 +203,10 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    /* Картинка сама растворяется к низу: иначе на дробной высоте обложки её нижний ряд пикселей
+       просвечивает из-под градиента тонкой линией */
+    -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
 }
 
 .get-qr-cover::after {

@@ -4,8 +4,7 @@ import { PageComponent, Text } from "../../components"
 import './style.css'
 import { API_BASE_URL } from '../../config'
 import { StoreData, trackLinkClick } from './components/link-row'
-import { DefaultStyle } from './components/default-style'
-import { CoverStyle } from "./components/cover-style"
+import { StoreStyle } from './components/store-style'
 
 const API_URL = `${API_BASE_URL}/get-links`
 
@@ -83,8 +82,7 @@ export const GetQrPage = () => {
     return (
         <PageComponent center={false}>
             <div className="get-qr-scroll">
-                <DefaultStyle data={data} />
-                {/* <CoverStyle data={data} /> */}
+                <StoreStyle data={data} />
             </div>
             {!promoClosed && (
                 <div ref={promoRef} className="get-qr-promo" onClick={() => { window.location.href = isAdmin ? '/admin' : '/' }}>
