@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { PageComponent, Text, Button } from "../../components"
+import { PageComponent, Text } from "../../components"
 import './style.css'
 import { API_BASE_URL } from '../../config'
 
@@ -17,7 +17,7 @@ interface GetCodeResponse {
     link: string;
 }
 
-type Status = 'loading' | 'error' | 'redirecting' | 'updated'
+type Status = 'loading' | 'error' | 'redirecting'
 
 const LoadComponent = ({text}: {text: string}) => (
     <div className="cards-loader">
@@ -28,7 +28,6 @@ const LoadComponent = ({text}: {text: string}) => (
 
 export const CardsPage = () => {
     const [status, setStatus] = useState<Status>('loading')
-    const [link, setLink] = useState<string | null>(null)
 
     useEffect(() => {
         const codeId = getCodeFromPath()
@@ -44,12 +43,6 @@ export const CardsPage = () => {
             .then((data: GetCodeResponse) => {
                 const target = resolveLink(data.link)
 
-                if (data.message === 'Code updated') {
-                    setLink(target)
-                    setStatus('updated')
-                    return
-                }
-
                 setStatus('redirecting')
                 window.location.href = target
             })
@@ -64,28 +57,9 @@ export const CardsPage = () => {
         )
     }
 
-    // if (status === 'loading' || status === 'redirecting') {
     return (
         <PageComponent>
             <LoadComponent text={status === 'redirecting' ? 'Переходим по ссылке…' : 'Загрузка…'} />
         </PageComponent>
     )
-    // }
-
-    // return (
-    //     <PageComponent>
-    //         <div className="cards-notify-card">
-    //             <Text size="l" color="white">Карта привязана</Text>
-    //             <Text size="s" color="lightGray">Карта успешно привязана к вашему магазину</Text>
-    //             <Button
-    //                 variant="solid"
-    //                 fullWidth
-    //                 textSize="m"
-    //                 onClick={() => link && (window.location.href = link)}
-    //             >
-    //                 Продолжить
-    //             </Button>
-    //         </div>
-    //     </PageComponent>
-    // )
 }

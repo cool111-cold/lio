@@ -413,7 +413,9 @@
 }
 
 .admin-code-row {
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
 }
 
 .admin-create-choice {
