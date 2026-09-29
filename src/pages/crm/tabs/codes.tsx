@@ -43,6 +43,7 @@ export const CodesTab = ({request}: {request: CrmRequest}) => {
     const [busy, setBusy] = useState(false)
     const [actionError, setActionError] = useState<string | null>(null)
     const [copiedId, setCopiedId] = useState<number | null>(null)
+    const [downloadingId, setDownloadingId] = useState<number | null>(null)
 
     const copyCardUrl = async (code: CrmCode) => {
         setActionError(null)
@@ -52,6 +53,29 @@ export const CodesTab = ({request}: {request: CrmRequest}) => {
             setTimeout(() => setCopiedId((id) => (id === code.id ? null : id)), 1500)
         } catch {
             setActionError('Не удалось скопировать ссылку')
+        }
+    }
+
+    // Картинка отдаётся только с токеном, поэтому качаем через fetch и сохраняем через blob-ссылку
+    const downloadCardImage = async (code: CrmCode) => {
+        setDownloadingId(code.id)
+        setActionError(null)
+        try {
+            const res = await request(`/crm/get-card-image?code_id=${code.id}`)
+            if (!res) return
+            await ensureOk(res, 'Не удалось скачать изображение')
+            const url = URL.createObjectURL(await res.blob())
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `card-${code.code}.png`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+        } catch (err) {
+            setActionError(getErrorMessage(err, 'Не удалось скачать изображение'))
+        } finally {
+            setDownloadingId(null)
         }
     }
 
@@ -133,6 +157,9 @@ export const CodesTab = ({request}: {request: CrmRequest}) => {
                     <div className="crm-row-actions">
                         <button type="button" className="admin-edit-btn" title={getCardUrl(code.code)} onClick={() => copyCardUrl(code)}>
                             <Text size="xs" color={copiedId === code.id ? 'accent' : 'lightGray'}>{copiedId === code.id ? 'Скопировано' : 'Скопировать'}</Text>
+                        </button>
+                        <button type="button" className="admin-edit-btn" disabled={downloadingId === code.id} onClick={() => downloadCardImage(code)}>
+                            <Text size="xs" color="lightGray">{downloadingId === code.id ? 'Загрузка…' : 'Изображение'}</Text>
                         </button>
                         <ConfirmButton label="Удалить" disabled={busy} onConfirm={() => deleteCode(code.id)} />
                     </div>
