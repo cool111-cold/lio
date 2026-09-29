@@ -7,6 +7,8 @@ import { PAGE_STYLES, PageStyle, normalizePageStyle } from '../get-qr/components
 import { StoreStyle } from '../get-qr/components/store-style'
 import './style.css'
 import { API_BASE_URL } from '../../config'
+import { startMailVerification } from '../verify-email'
+import { MIN_PASSWORD_LENGTH, extractPasswordError } from '../reset-password'
 
 const extractErrorDetail = async (res: Response): Promise<string | null> => {
     try {
@@ -214,6 +216,12 @@ const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: Li
     </form>
 )
 
+interface PasswordState {
+    oldPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+}
+
 interface GetQrAdminPageProps {
     token: string;
     onUnauthorized?: () => void;
@@ -229,6 +237,10 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
     const [saving, setSaving] = useState(false)
     const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false)
     const [deletingAccount, setDeletingAccount] = useState(false)
+    const [changingPassword, setChangingPassword] = useState<PasswordState | null>(null)
+    const [passwordSaving, setPasswordSaving] = useState(false)
+    const [passwordError, setPasswordError] = useState<string | null>(null)
+    const [passwordChanged, setPasswordChanged] = useState(false)
 
     const [showTemplates, setShowTemplates] = useState(false)
     const [templates, setTemplates] = useState<TemplateSummary[]>([])
@@ -355,16 +367,6 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
             }
             if (!storeRes.ok) throw new Error((await extractErrorDetail(storeRes)) ?? '')
 
-            const mailRes = await fetch(`${API_BASE_URL}/update-mail?mail=${encodeURIComponent(editingProfile.mail)}`, {
-                method: 'POST',
-                headers: authHeaders,
-            })
-            if (mailRes.status === 401) {
-                onUnauthorized?.()
-                return
-            }
-            if (!mailRes.ok) throw new Error((await extractErrorDetail(mailRes)) ?? '')
-
             if (editingProfile.style !== normalizePageStyle(store.style)) {
                 const styleRes = await fetch(`${API_BASE_URL}/update-style?store_id=${store.id}&new_style=${editingProfile.style}`, {
                     method: 'POST',
@@ -375,6 +377,12 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                     return
                 }
                 if (!styleRes.ok) throw new Error((await extractErrorDetail(styleRes)) ?? '')
+            }
+
+            const newMail = editingProfile.mail.trim()
+            if (newMail && newMail !== clientMail) {
+                startMailVerification(newMail)
+                return
             }
 
             setEditingProfile(null)
@@ -421,6 +429,52 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         } catch {
             setError('Не удалось удалить аккаунт')
             setDeletingAccount(false)
+        }
+    }
+
+    const startChangePassword = () => {
+        setPasswordError(null)
+        setPasswordChanged(false)
+        setChangingPassword({oldPassword: '', newPassword: '', confirmPassword: ''})
+    }
+
+    const cancelChangePassword = () => setChangingPassword(null)
+
+    const submitPassword = async (e: SubmitEvent) => {
+        e.preventDefault()
+        if (!changingPassword) return
+        setPasswordError(null)
+
+        if (!changingPassword.oldPassword) {
+            setPasswordError('Введите текущий пароль')
+            return
+        }
+        if (changingPassword.newPassword.length < MIN_PASSWORD_LENGTH) {
+            setPasswordError(`Пароль должен быть не короче ${MIN_PASSWORD_LENGTH} символов`)
+            return
+        }
+        if (changingPassword.newPassword !== changingPassword.confirmPassword) {
+            setPasswordError('Пароли не совпадают')
+            return
+        }
+
+        setPasswordSaving(true)
+        try {
+            const res = await fetch(`${API_BASE_URL}/update_password`, {
+                method: 'POST',
+                headers: {...authHeaders, 'Content-Type': 'application/json'},
+                body: JSON.stringify({old_password: changingPassword.oldPassword, new_password: changingPassword.newPassword}),
+            })
+            if (res.status === 401) {
+                onUnauthorized?.()
+                return
+            }
+            if (!res.ok) throw new Error(await extractPasswordError(res, 'Не удалось сменить пароль'))
+            setPasswordChanged(true)
+        } catch (err) {
+            setPasswordError(err instanceof Error && err.message ? err.message : 'Не удалось сменить пароль')
+        } finally {
+            setPasswordSaving(false)
         }
     }
 
@@ -782,6 +836,14 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                                     <button
                                         type="button"
                                         className="admin-edit-btn"
+                                        onClick={() => {cancelEditProfile(); startChangePassword()}}
+                                        disabled={saving || deletingAccount}
+                                    >
+                                        <Text size="xs" color="lightGray">Сменить пароль</Text>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="admin-edit-btn"
                                         onClick={() => setConfirmDeleteAccount(true)}
                                         disabled={saving || deletingAccount}
                                     >
@@ -804,6 +866,56 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                         </div>
                     </form>
                     {error && <Text size="xs" color="accent">{error}</Text>}
+                </Modal>
+            )}
+
+            {changingPassword && (
+                <Modal title="Смена пароля" onClose={cancelChangePassword}>
+                    {passwordChanged ? (
+                        <div className="admin-profile-edit">
+                            <Text size="s" color="lightGray">Пароль изменён</Text>
+                            <div className="admin-edit-actions">
+                                <Button type="button" variant="solid" textSize="s" onClick={cancelChangePassword}>Готово</Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <form className="admin-profile-edit" onSubmit={submitPassword}>
+                            <Input
+                                label="Текущий пароль"
+                                secureToggle
+                                autoComplete="current-password"
+                                value={changingPassword.oldPassword}
+                                onChange={(e) => setChangingPassword({...changingPassword, oldPassword: e.target.value})}
+                            />
+                            <Input
+                                label="Новый пароль"
+                                placeholder={`Минимум ${MIN_PASSWORD_LENGTH} символов`}
+                                secureToggle
+                                autoComplete="new-password"
+                                value={changingPassword.newPassword}
+                                onChange={(e) => setChangingPassword({...changingPassword, newPassword: e.target.value})}
+                            />
+                            <Input
+                                label="Повтор пароля"
+                                placeholder="Повторите пароль"
+                                secureToggle
+                                autoComplete="new-password"
+                                value={changingPassword.confirmPassword}
+                                onChange={(e) => setChangingPassword({...changingPassword, confirmPassword: e.target.value})}
+                            />
+                            {passwordError && <Text size="xs" color="accent">{passwordError}</Text>}
+                            <div className="admin-edit-actions">
+                                {clientMail && (
+                                    <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={() => window.location.assign('/reset-password')} disabled={passwordSaving}>
+                                        Забыли пароль?
+                                    </Button>
+                                )}
+                                <Button type="submit" variant="solid" textSize="s" disabled={passwordSaving}>
+                                    {passwordSaving ? 'Сохранение…' : 'Сохранить'}
+                                </Button>
+                            </div>
+                        </form>
+                    )}
                 </Modal>
             )}
 

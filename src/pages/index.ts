@@ -11,3 +11,5 @@ export { GetQrAdminPage } from './get-qr-admin';
 export { GetQrAdminLoginPage } from './get-qr-admin/login';
 export { CrmPage } from './crm';
 export { CrmLoginPage } from './crm/login';
+export { VerifyEmailPage } from './verify-email';
+export { ResetPasswordPage } from './reset-password';

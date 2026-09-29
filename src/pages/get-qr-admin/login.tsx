@@ -2,6 +2,7 @@ import { ChangeEvent, CSSProperties, SubmitEvent, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
 import './login.css'
 import { API_BASE_URL } from '../../config'
+import { startMailVerification } from '../verify-email'
 
 type Mode = 'login' | 'register'
 
@@ -95,6 +96,9 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
 
             const data = await response.json()
             onAuthenticated?.(data.access_token)
+            if (mode === 'register' && registerForm.mail) {
+                startMailVerification(registerForm.mail)
+            }
         } catch {
             setError(mode === 'login' ? 'Неверный логин или пароль' : getCardFromPath() ? 'Не удалось зарегистрироваться' : 'Пожалуйста, приобретите карту для регистрации или отсканируйте уже имеющуюся')
         } finally {
@@ -136,6 +140,12 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
                     <Button type="submit" variant="solid" fullWidth textSize="m" disabled={loading}>
                         {loading ? 'Подождите…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
                     </Button>
+
+                    {mode === 'login' && (
+                        <Button type="button" variant="ghost" fullWidth textSize="s" textColor="lightGray" onClick={() => window.location.assign('/reset-password')}>
+                            Забыли пароль?
+                        </Button>
+                    )}
                 </form>
             </div>
         </PageComponent>

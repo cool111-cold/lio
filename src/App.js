@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -68,6 +68,14 @@ function App() {
 
   if (window.location.pathname === '/') {
     return <MainQrPage />;
+  }
+
+  if (window.location.pathname.startsWith('/verify-email')) {
+    return <VerifyEmailPage />;
+  }
+
+  if (window.location.pathname.startsWith('/reset-password')) {
+    return <ResetPasswordPage />;
   }
 
   if (window.location.pathname.startsWith('/admin')) {
