@@ -654,3 +654,53 @@
 .admin-store-card .admin-profile-actions {
     justify-content: center;
 }
+
+.admin-help-trigger {
+    right: 64px;
+}
+
+.admin-help-icon {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.admin-onboarding-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.admin-onboarding-hints {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.admin-onboarding-chip {
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid #A8E10C;
+    background: transparent;
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.3;
+    animation: admin-onboarding-chip-in 0.3s ease;
+}
+
+.admin-onboarding-chip-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+@keyframes admin-onboarding-chip-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

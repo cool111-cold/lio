@@ -1,23 +1,20 @@
-import { ReactNode, SubmitEvent, useEffect, useState } from "react"
+import { SubmitEvent, useEffect, useState } from "react"
 import { PageComponent, Text, Button, Input } from "../../components"
-import { resolveIcon, resolveAssetUrl } from "../../helpers"
+import { resolveIcon, resolveAssetUrl, extractErrorDetail } from "../../helpers"
 import settingIcon from '../../assets/icons/setting-icon.svg'
 import logoutIcon from '../../assets/icons/logout-icon.svg'
 import { PAGE_STYLES, PageStyle, normalizePageStyle } from '../get-qr/components/link-row'
 import { StoreStyle } from '../get-qr/components/store-style'
 import './style.css'
+import { Modal } from './components/modal'
+import { ImagePicker } from './components/image-picker'
+import { StoreOnboarding } from './components/onboarding'
+import { HintCarousel, LINK_HINTS } from './components/hint-carousel'
 import { API_BASE_URL } from '../../config'
 import { startMailVerification } from '../verify-email'
 import { MIN_PASSWORD_LENGTH, extractPasswordError } from '../reset-password'
 
-const extractErrorDetail = async (res: Response): Promise<string | null> => {
-    try {
-        const data = await res.json()
-        return typeof data?.detail === 'string' ? data.detail : null
-    } catch {
-        return null
-    }
-}
+export { Modal }
 
 const pluralize = ({count, forms} : {count: number, forms: any}) => {
         const pr = new Intl.PluralRules('ru-RU');
@@ -94,82 +91,6 @@ interface CodeSummary {
     store_id: number | null;
 }
 
-interface ModalProps {
-    title: string;
-    onClose: () => void;
-    children: ReactNode;
-}
-
-export const Modal = ({title, onClose, children}: ModalProps) => {
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose()
-        }
-        document.addEventListener('keydown', onKeyDown)
-        return () => document.removeEventListener('keydown', onKeyDown)
-    }, [onClose])
-
-    return (
-        <div className="admin-modal-overlay" onClick={onClose}>
-            <div className="admin-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-                <div className="admin-modal-header">
-                    <Text size="l" color="white">{title}</Text>
-                    <button type="button" className="admin-modal-close" aria-label="Закрыть" onClick={onClose}>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                            <path d="M2 2l8 8M10 2l-8 8" />
-                        </svg>
-                    </button>
-                </div>
-                {children}
-            </div>
-        </div>
-    )
-}
-
-interface ImagePickerProps {
-    file: File | null;
-    fallbackSrc: string | null;
-    onChange: (file: File | null) => void;
-    shape?: 'circle' | 'square';
-    size?: number;
-    label?: string;
-}
-
-const ImagePicker = ({file, fallbackSrc, onChange, shape = 'circle', size = 96, label = 'Изменить'}: ImagePickerProps) => {
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-    useEffect(() => {
-        if (!file) {
-            setPreviewUrl(null)
-            return
-        }
-        const url = URL.createObjectURL(file)
-        setPreviewUrl(url)
-        return () => URL.revokeObjectURL(url)
-    }, [file])
-
-    const src = previewUrl ?? fallbackSrc
-
-    return (
-        <label className={`image-picker image-picker-${shape}`} style={{width: size, height: size}}>
-            <input
-                type="file"
-                accept="image/*"
-                className="image-picker-input"
-                onChange={(e) => onChange(e.target.files?.[0] ?? null)}
-            />
-            {src ? (
-                <img className="image-picker-preview" src={src} alt="" />
-            ) : (
-                <span className="image-picker-plus">+</span>
-            )}
-            <span className="image-picker-overlay">
-                <Text size="xs" color="white">{label}</Text>
-            </span>
-        </label>
-    )
-}
-
 interface LinkEditRowProps {
     value: EditingState;
     onChange: (value: EditingState) => void;
@@ -192,6 +113,7 @@ const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: Li
             />
             <Text size="xs" color="lightGray">Своя иконка для ссылки (необязательно)</Text>
         </div>
+        {value.id === 'new' && <HintCarousel hints={LINK_HINTS} size="s" />}
         <Input
             placeholder="https://..."
             value={value.link}
@@ -260,10 +182,15 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
 
     const [showMenu, setShowMenu] = useState(false)
 
+    const [showOnboarding, setShowOnboarding] = useState(false)
+    const [onboardingPrompted, setOnboardingPrompted] = useState(false)
+
+    const isStoreEmpty = !!store && store.links.length === 0
+
     const authHeaders = {Authorization: `Bearer ${token}`}
 
-    const loadStore = async () => {
-        setLoading(true)
+    const loadStore = async ({silent = false}: {silent?: boolean} = {}) => {
+        if (!silent) setLoading(true)
         setError(null)
         try {
             const storeRes = await fetch(`${API_BASE_URL}/get-my-store`, {headers: authHeaders})
@@ -290,6 +217,12 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         loadStore()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token])
+
+    useEffect(() => {
+        if (!store || onboardingPrompted) return
+        setOnboardingPrompted(true)
+        if (isStoreEmpty) setShowOnboarding(true)
+    }, [store, onboardingPrompted, isStoreEmpty])
 
     const startEdit = (link: ApiLink) => { setError(null); setEditing({id: link.id, link: link.link, label: link.label, icon: link.icon, imageFile: null}) }
     const startCreate = () => { setError(null); setEditing({id: 'new', link: '', label: '', icon: null, imageFile: null}) }
@@ -697,6 +630,12 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                 <img src={settingIcon} alt="" />
             </button>
 
+            {isStoreEmpty && (
+                <button type="button" className="admin-menu-trigger admin-help-trigger" aria-label="Помощь в настройке" onClick={() => setShowOnboarding(true)}>
+                    <span className="admin-help-icon">?</span>
+                </button>
+            )}
+
             {showMenu && (
                 <>
                     <div className="admin-menu-overlay" onClick={() => setShowMenu(false)} />
@@ -768,6 +707,16 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                     />
                     {error && <Text size="xs" color="accent">{error}</Text>}
                 </Modal>
+            )}
+
+            {showOnboarding && (
+                <StoreOnboarding
+                    store={store}
+                    token={token}
+                    onClose={() => setShowOnboarding(false)}
+                    onChanged={() => loadStore({silent: true})}
+                    onUnauthorized={onUnauthorized}
+                />
             )}
 
             {editingProfile && (
