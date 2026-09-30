@@ -9,6 +9,7 @@ export { CardsPage } from './cards';
 export { MainQrPage } from './main-qr';
 export { GetQrAdminPage } from './get-qr-admin';
 export { GetQrAdminLoginPage } from './get-qr-admin/login';
+export { GetQrAdminStatsPage } from './get-qr-admin/stats';
 export { CrmPage } from './crm';
 export { CrmLoginPage } from './crm/login';
 export { VerifyEmailPage } from './verify-email';

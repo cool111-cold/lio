@@ -39,12 +39,12 @@ export const GetQrPage = () => {
             .catch(() => setError(true))
     }, [])
 
-    useEffect(() => {
-        if (data && data.links.length === 1) {
-            trackLinkClick(data.links[0].id)
-            window.location.href = data.links[0].link
-        }
-    }, [data])
+    // useEffect(() => {
+    //     if (data && data.links.length === 1) {
+    //         trackLinkClick(data.links[0].id)
+    //         window.location.href = data.links[0].link
+    //     }
+    // }, [data])
 
     useEffect(() => {
         if (!promoRef.current) return
@@ -71,13 +71,13 @@ export const GetQrPage = () => {
         )
     }
 
-    if (data.links.length === 1) {
-        return (
-            <PageComponent>
-                <LoadComponent text="Открываем ссылку…" />
-            </PageComponent>
-        )
-    }
+    // if (data.links.length === 1) {
+    //     return (
+    //         <PageComponent>
+    //             <LoadComponent text="Открываем ссылку…" />
+    //         </PageComponent>
+    //     )
+    // }
 
     return (
         <PageComponent center={false}>

@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, GetQrAdminStatsPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -27,8 +27,10 @@ const AdminGate = () => {
     );
   }
 
+  const AdminPage = window.location.pathname.startsWith('/admin/stats') ? GetQrAdminStatsPage : GetQrAdminPage;
+
   return (
-    <GetQrAdminPage
+    <AdminPage
       token={token}
       onUnauthorized={() => {
         localStorage.removeItem(ADMIN_TOKEN_KEY);

@@ -100,32 +100,53 @@ interface LinkEditRowProps {
     saving: boolean;
 }
 
-const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: LinkEditRowProps) => (
-    <form className="admin-edit-row" onSubmit={onSubmit}>
+const KNOWN_LINK_HOSTS = ['yandex.ru', 't.me', 'avito.ru', 'www.avito.ru', 'go.2gis.com', 'vk.ru', 'max.ru', 'wa.me']
+
+const getLinkHost = (link: string) => link.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').split(/[/?#]/)[0]
+
+const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: LinkEditRowProps) => {
+    const isNew = value.id === 'new'
+    const host = getLinkHost(value.link)
+    const isKnownLink = KNOWN_LINK_HOSTS.includes(host)
+    // пока пользователь допечатывает известный домен, доп. поля не показываем
+    const mayBecomeKnown = KNOWN_LINK_HOSTS.some((known) => known.startsWith(host))
+    const hasCustomData = !!value.label || !!value.imageFile
+    const isUnknownLink = !!host && !isKnownLink && !mayBecomeKnown
+    const showDetails = !isNew || hasCustomData || isUnknownLink
+    // только превью того, как ссылка будет выглядеть — на сервер не отправляется
+    const showPreview = isNew && isUnknownLink
+
+    const imageRow = showDetails && (
         <div className="admin-edit-image-row">
             <ImagePicker
                 file={value.imageFile}
-                fallbackSrc={value.icon ? resolveIcon(value.icon) : null}
+                fallbackSrc={value.icon || showPreview ? resolveIcon(value.icon) : null}
                 onChange={(file) => onChange({...value, imageFile: file})}
                 shape="square"
                 size={64}
                 label="Фото"
             />
-            <Text size="xs" color="lightGray">Своя иконка для ссылки (необязательно)</Text>
+            <Text size="xs" color="lightGray">Иконка (нажмите чтобы поменять)</Text>
         </div>
-        {value.id === 'new' && <HintCarousel hints={LINK_HINTS} size="s" />}
+    )
+
+    return (
+    <form className="admin-edit-row" onSubmit={onSubmit}>
+        {imageRow}
+        {isNew && <HintCarousel hints={LINK_HINTS} />}
         <Input
             placeholder="https://..."
             value={value.link}
             onChange={(e) => onChange({...value, link: e.target.value})}
         />
-        <Input
-            placeholder="Название (необязательно)"
-            value={value.label}
-            maxLength={20}
-            onChange={(e) => onChange({...value, label: e.target.value})}
-        />
-        {!value.label && !value.icon && !value.imageFile && <Text size="xs" color="lightGray">Изображение и название автоматически подберем из нашей базы</Text>}
+        {showDetails && (
+            <Input
+                placeholder={showPreview ? host : 'Название (необязательно)'}
+                value={value.label}
+                maxLength={20}
+                onChange={(e) => onChange({...value, label: e.target.value})}
+            />
+        )}
         <div className="admin-edit-actions">
             {onDelete && (
                 <Button type="button" variant="ghost" textSize="s" textColor="lightGray" onClick={onDelete} disabled={saving}>Удалить</Button>
@@ -136,7 +157,8 @@ const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: Li
             </Button>
         </div>
     </form>
-)
+    )
+}
 
 interface PasswordState {
     oldPassword: string;
@@ -667,6 +689,9 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                             onClick={() => window.open(`${window.location.origin}/${store.id}`, '_blank', 'noopener,noreferrer')}
                         >
                             <Text size="xs" color="lightGray">Открыть страницу</Text>
+                        </button>
+                        <button type="button" className="admin-edit-btn" onClick={() => window.location.assign('/admin/stats')}>
+                            <Text size="xs" color="lightGray">Открыть статистику</Text>
                         </button>
                     </div>
 
