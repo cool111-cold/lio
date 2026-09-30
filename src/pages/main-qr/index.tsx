@@ -3,6 +3,7 @@ import { gsap } from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { PageComponent, Text, Button } from "../../components"
 import { CardPreview } from "./components/card-preview"
+import { SetupDemo } from "./components/setup-demo"
 import vIcon from '../../assets/icons/v-icon.svg'
 import companyIcon from './icons/company.svg'
 import personIcon from './icons/fisical-faces.svg'
@@ -160,7 +161,7 @@ const ADVANTAGES: Advantage[] = [
     },
     {
         icon: calendarIcon, color: '#FFC94D',
-        title: 'Хостинг навсегда',
+        title: 'Бесплатный хостинг',
         description: 'Покупая карту, вы получаете хостинг вашей страницы — без ежемесячных платежей за её хранение',
     },
     {
@@ -367,7 +368,11 @@ export const MainQrPage = () => {
                 .from('.onboarding-marquee-intro', {opacity: 0, y: 12, duration: 0.5}, '-=0.2')
                 .from('.onboarding-marquee', {opacity: 0, duration: 0.6}, '-=0.2')
                 .from('.onboarding-steps-heading', {opacity: 0, y: 12, duration: 0.5}, '-=0.1')
-                .from('.onboarding-steps', {opacity: 0, y: 24, duration: 0.6}, '-=0.2')
+                .from('.onboarding-steps-hint', {opacity: 0, y: 12, duration: 0.5}, '-=0.3')
+                // .from('.onboarding-steps', {opacity: 0, y: 24, duration: 0.6}, '-=0.2')
+                .from('.setup-demo-phone', {opacity: 0, y: 80, scale: 0.92, duration: 0.9}, '-=0.2')
+                .from('.setup-demo-counter', {opacity: 0, scale: 0.7, duration: 0.8}, '-=0.5')
+                .from('.setup-demo-caption', {opacity: 0, y: 12, duration: 0.4}, '-=0.4')
                 .call(() => setIsStepsRevealed(true))
                 .from('.onboarding-cta', {opacity: 0, y: 12, duration: 0.4}, '-=0.15')
 
@@ -421,7 +426,7 @@ export const MainQrPage = () => {
                         </div>
 
                         <div className="onboarding-eyebrow">
-                            <Text size="xs" color="lightGray">LIO · QR-платформа</Text>
+                            <Text size="xs" color="lightGray">VLink · QR-платформа</Text>
                         </div>
 
                         <div className="onboarding-title">
@@ -476,6 +481,11 @@ export const MainQrPage = () => {
                         <div className="onboarding-steps-heading">
                             <Text size='l' color="white">Настройка в пару кликов</Text>
                         </div>
+                        <div className="onboarding-steps-hint">
+                            <Text size="s" color="lightGray">Попробуйте сами - нажмите на экран</Text>
+                        </div>
+                        <SetupDemo />
+                        {/* Карусель шагов временно скрыта — её заменил интерактив SetupDemo
                         <div
                             className={`onboarding-steps${isStepsPaused ? ' is-paused' : ''}`}
                             style={{'--steps-autoplay': `${STEPS_AUTOPLAY_MS}ms`} as CSSProperties}
@@ -549,6 +559,7 @@ export const MainQrPage = () => {
                                 </button>
                             </div>
                         </div>
+                        */}
                     </div>
 
                     <div className="onboarding-divider" />
@@ -654,14 +665,14 @@ export const MainQrPage = () => {
 
                     <div className="onboarding-compare-heading">
                         <Text size="xs" color="lightGray">Больше, чем визитка</Text>
-                        <Text size="l" color="white">Бумага против LIO</Text>
+                        <Text size="l" color="white">Бумага против VLink</Text>
                     </div>
 
                     <div className="onboarding-compare">
                         <div className="onboarding-compare-row onboarding-compare-head">
                             <span />
                             <Text size="xs" color="lightGray">Бумажная визитка</Text>
-                            <Text size="xs" color="accent">Карта LIO</Text>
+                            <Text size="xs" color="accent">Карта VLink</Text>
                         </div>
                         {COMPARE_ROWS.map((row) => (
                             <div className="onboarding-compare-row" key={row.feature}>

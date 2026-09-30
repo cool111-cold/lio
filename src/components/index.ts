@@ -11,3 +11,4 @@ export type { ComponentSource } from "./inspector/componentSources";
 
 export { Button } from "./button";
 export { Input } from "./input";
+export { PhoneMockup } from "./phone-mockup";
