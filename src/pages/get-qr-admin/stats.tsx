@@ -13,6 +13,7 @@ interface ApiMetric {
 interface ApiStatsLink {
     id: number;
     label: string;
+    link: string;
     icon: string | null;
 }
 
@@ -234,11 +235,14 @@ export const GetQrAdminStatsPage = ({token, onUnauthorized}: GetQrAdminStatsPage
                                 </div>
                                 {linkRows.length === 0 && <Text size="s" color="lightGray">{loading ? 'Загрузка…' : 'Ссылок пока нет'}</Text>}
                                 {linkRows.map((link) => (
-                                    <div className="admin-stats-row" key={link.id} onClick={() => window.location.replace(link.link)}>
+                                    <div className="admin-stats-row" key={link.id} onClick={() => window.open(link.link, '_blank', 'noopener,noreferrer')}>
                                         <div className="admin-stats-row-top">
                                             <div className="admin-stats-row-label">
                                                 <img className="admin-stats-row-icon" src={resolveIcon(link.icon)} alt="" />
                                                 <Text size="s" color="white">{link.label}</Text>
+                                                <svg className="admin-stats-row-go" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                                    <path d="M6 3h7v7M13 3 4 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                                </svg>
                                             </div>
                                             <span className="admin-stats-count">{link.count}</span>
                                         </div>

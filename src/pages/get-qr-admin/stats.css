@@ -129,6 +129,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    cursor: pointer;
 }
 
 .admin-stats-row-top {
@@ -150,7 +151,20 @@
     height: 20px;
     flex-shrink: 0;
     border-radius: 6px;
-    object-fit: cover;
+    object-fit: contain;
+}
+
+.admin-stats-row-go {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    color: #b5b5b5;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.admin-stats-row:hover .admin-stats-row-go {
+    color: #a8e10c;
+    transform: translate(1px, -1px);
 }
 
 .admin-stats-count {
