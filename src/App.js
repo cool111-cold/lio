@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, GetQrAdminStatsPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, GetQrAdminStatsPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage, MapPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -86,6 +86,10 @@ function App() {
 
   if (window.location.pathname.startsWith('/crm')) {
     return <CrmGate />;
+  }
+
+  if (window.location.pathname.startsWith('/map')) {
+    return <MapPage />;
   }
 
   if (window.location.pathname.startsWith('/cards/')) {

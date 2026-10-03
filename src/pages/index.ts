@@ -14,3 +14,4 @@ export { CrmPage } from './crm';
 export { CrmLoginPage } from './crm/login';
 export { VerifyEmailPage } from './verify-email';
 export { ResetPasswordPage } from './reset-password';
+export { MapPage } from './map';
