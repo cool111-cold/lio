@@ -7,6 +7,7 @@ import { PAGE_STYLES, PageStyle, normalizePageStyle } from '../get-qr/components
 import { StoreStyle } from '../get-qr/components/store-style'
 import './style.css'
 import { Modal } from './components/modal'
+import { SupportModal } from './components/support-modal'
 import { ImagePicker } from './components/image-picker'
 import { StoreOnboarding } from './components/onboarding'
 import { HintCarousel, LINK_HINTS } from './components/hint-carousel'
@@ -103,6 +104,17 @@ interface LinkEditRowProps {
 const KNOWN_LINK_HOSTS = ['yandex.ru', 't.me', 'avito.ru', 'www.avito.ru', 'go.2gis.com', 'vk.ru', 'max.ru', 'wa.me']
 
 const getLinkHost = (link: string) => link.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').split(/[/?#]/)[0]
+
+// только https и домен с точкой — отсекает случайные строки вроде "https://abc"
+const isValidLink = (link: string) => {
+    if (!/^https:\/\//i.test(link)) return false
+    try {
+        const {hostname} = new URL(link)
+        return /^[^.\s]+(\.[^.\s]+)+$/.test(hostname)
+    } catch {
+        return false
+    }
+}
 
 const LinkEditRow = ({value, onChange, onSubmit, onCancel, onDelete, saving}: LinkEditRowProps) => {
     const isNew = value.id === 'new'
@@ -203,6 +215,7 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
     const [confirmUnlinkCode, setConfirmUnlinkCode] = useState<number | null>(null)
 
     const [showMenu, setShowMenu] = useState(false)
+    const [showSupport, setShowSupport] = useState(false)
 
     const [showOnboarding, setShowOnboarding] = useState(false)
     const [onboardingPrompted, setOnboardingPrompted] = useState(false)
@@ -255,10 +268,16 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
         e.preventDefault()
         if (!editing || !editing.link) return
 
+        const link = editing.link.trim()
+        if (!isValidLink(link)) {
+            setError('Ссылка должна начинаться с https:// и содержать адрес сайта, например https://t.me/username')
+            return
+        }
+
         setSaving(true)
         setError(null)
         try {
-            const params = new URLSearchParams({link: editing.link})
+            const params = new URLSearchParams({link})
             if (editing.label) params.set('label', editing.label)
 
             const url = editing.id === 'new'
@@ -671,6 +690,9 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                         <button type="button" className="admin-menu-item" onClick={() => {setShowMenu(false); openCodes()}}>
                             <Text size="s" color="white">Мои карты</Text>
                         </button>
+                        <button type="button" className="admin-menu-item" onClick={() => {setShowMenu(false); setShowSupport(true)}}>
+                            <Text size="s" color="white">Поддержка</Text>
+                        </button>
                         <div className="admin-menu-divider" />
                         <button type="button" className="admin-menu-item admin-menu-item-icon" onClick={() => {setShowMenu(false); onUnauthorized?.()}}>
                             <img src={logoutIcon} alt="" />
@@ -994,6 +1016,8 @@ export const GetQrAdminPage = ({token, onUnauthorized}: GetQrAdminPageProps) => 
                     {templatesError && <Text size="xs" color="accent">{templatesError}</Text>}
                 </Modal>
             )}
+
+            {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
 
             {showCodes && (
                 <Modal title="Мои карты" onClose={closeCodes}>

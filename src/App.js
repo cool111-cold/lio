@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useState } from 'react';
-import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, GetQrAdminStatsPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage, MapPage } from './pages';
+import { MainPage, RoomPage, ThreeDPage, SalesPage, GetQrPage, GetQrAdminPage, GetQrAdminLoginPage, GetQrAdminStatsPage, CardsPage, MainQrPage, CrmPage, CrmLoginPage, VerifyEmailPage, ResetPasswordPage, MapPage, PrivacyPolicyPage, PersonalDataConsentPage } from './pages';
 
 const PAGE_COMPONENTS = {
   main: MainPage,
@@ -72,6 +72,14 @@ function App() {
     return <MainQrPage />;
   }
 
+  if (window.location.pathname === '/privacy') {
+    return <PrivacyPolicyPage />;
+  }
+
+  if (window.location.pathname === '/consent') {
+    return <PersonalDataConsentPage />;
+  }
+
   if (window.location.pathname.startsWith('/verify-email')) {
     return <VerifyEmailPage />;
   }
@@ -103,7 +111,6 @@ function App() {
   return <MainQrPage />;
 }
 
-// тесты пайплайны метрика переовод 
 
 export default App;
 

@@ -4,6 +4,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { PageComponent, Text, Button } from "../../components"
 import { CardPreview } from "./components/card-preview"
 import { SetupDemo } from "./components/setup-demo"
+import { SupportModal } from "../get-qr-admin/components/support-modal"
 import vIcon from '../../assets/icons/v-icon.svg'
 import companyIcon from './icons/company.svg'
 import personIcon from './icons/fisical-faces.svg'
@@ -308,6 +309,7 @@ export const MainQrPage = () => {
     const rootRef = useRef<HTMLDivElement>(null)
     const [orderedDesignId, setOrderedDesignId] = useState<string | null>(null)
     const [openFaq, setOpenFaq] = useState<number | null>(0)
+    const [showSupport, setShowSupport] = useState(false)
     const [activeStep, setActiveStep] = useState(0)
     // увеличивается при каждом переключении, чтобы прогресс автопрокрутки начинался заново
     const [stepCycle, setStepCycle] = useState(0)
@@ -763,7 +765,7 @@ export const MainQrPage = () => {
                         <Text size="s" color="lightGray">Откройте нашу страницу так же, как её увидят ваши гости, — а потом соберите свою</Text>
                         <div className="onboarding-hero-actions">
                             <Button variant="solid" textSize="s" onClick={goToCard}>Открыть пример</Button>
-                            <Button variant="outline" textSize="s" textColor="white" onClick={() => scrollToSection('onboarding-designs-section')}>Выбрать дизайн</Button>
+                            <Button variant="outline" textSize="s" textColor="white" onClick={() => setShowSupport(true)}>Связаться с нами</Button>
                         </div>
                     </div>
 
@@ -774,6 +776,7 @@ export const MainQrPage = () => {
                     </div>
                 </div>
             </div>
+            {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
         </PageComponent>
     )
 }

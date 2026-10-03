@@ -21,6 +21,25 @@ interface RegisterFormState {
 const INITIAL_LOGIN: LoginFormState = {login: '', password: ''}
 const INITIAL_REGISTER: RegisterFormState = {mail: '', login: '', password: '', confirmPassword: ''}
 
+// Документы по 152-ФЗ: политика и согласие должны быть отдельными документами
+const PRIVACY_POLICY_URL = '/privacy'
+const PD_CONSENT_URL = '/consent'
+
+// ошибки бэка на английском переводим, русские показываем как есть
+const REGISTER_ERRORS: Record<string, string> = {
+    'Login already taken': 'Этот логин уже занят',
+    'Personal data consent required': 'Необходимо согласие на обработку персональных данных',
+}
+
+const getErrorDetail = async (response: Response): Promise<string | null> => {
+    try {
+        const data = await response.json()
+        return typeof data?.detail === 'string' ? data.detail : null
+    } catch {
+        return null
+    }
+}
+
 
 const getCardFromPath = (): string | null => {
     const match = window.location.pathname.match(/^\/admin\/([^/]+)/)
@@ -42,6 +61,7 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
     const [registerForm, setRegisterForm] = useState<RegisterFormState>(INITIAL_REGISTER)
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    const [pdConsent, setPdConsent] = useState(false)
 
     const switchMode = (nextMode: Mode) => {
         setMode(nextMode)
@@ -74,6 +94,10 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
                 setError('Пароли не совпадают')
                 return
             }
+            if (!pdConsent) {
+                setError('Необходимо согласие на обработку персональных данных')
+                return
+            }
         }
 
         setLoading(true)
@@ -86,11 +110,16 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
                 body: JSON.stringify(
                     mode === 'login'
                         ? {login: loginForm.login, password: loginForm.password}
-                        : {mail: registerForm.mail || undefined, login: registerForm.login, password: registerForm.password}
+                        : {mail: registerForm.mail || undefined, login: registerForm.login, password: registerForm.password, pd_consent: pdConsent}
                 ),
             })
 
             if (!response.ok) {
+                const detail = mode === 'register' ? await getErrorDetail(response) : null
+                if (detail && detail !== 'Invalid card') {
+                    setError(REGISTER_ERRORS[detail] ?? detail)
+                    return
+                }
                 throw new Error('Request failed')
             }
 
@@ -132,12 +161,18 @@ export const GetQrAdminLoginPage = ({onAuthenticated}: GetQrAdminLoginPageProps 
                             <Input label="Логин" placeholder="Придумайте логин" autoComplete="username" value={registerForm.login} onChange={updateRegisterField('login')} />
                             <Input label="Пароль" placeholder="Минимум 6 символов" secureToggle autoComplete="new-password" value={registerForm.password} onChange={updateRegisterField('password')} />
                             <Input label="Повтор пароля" placeholder="Повторите пароль" secureToggle autoComplete="new-password" value={registerForm.confirmPassword} onChange={updateRegisterField('confirmPassword')} />
+                            <label className="admin-login-consent jost">
+                                <input type="checkbox" checked={pdConsent} onChange={(e) => setPdConsent(e.target.checked)} />
+                                <span>
+                                    Даю <a href={PD_CONSENT_URL} target="_blank" rel="noopener noreferrer">согласие на обработку персональных данных</a> и ознакомлен(а) с <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer">политикой обработки персональных данных</a>
+                                </span>
+                            </label>
                         </>
                     )}
 
                     {error && <Text size="xs" color="accent">{error}</Text>}
 
-                    <Button type="submit" variant="solid" fullWidth textSize="m" disabled={loading}>
+                    <Button type="submit" variant="solid" fullWidth textSize="m" disabled={loading || (mode === 'register' && !pdConsent)}>
                         {loading ? 'Подождите…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
                     </Button>
 

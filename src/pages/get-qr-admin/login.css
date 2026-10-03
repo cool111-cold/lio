@@ -36,3 +36,24 @@
     flex-direction: column;
     gap: 14px;
 }
+
+.admin-login-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(249, 249, 249, 0.6);
+    cursor: pointer;
+}
+
+.admin-login-consent input {
+    flex-shrink: 0;
+    margin: 2px 0 0;
+    accent-color: #f9f9f9;
+}
+
+.admin-login-consent a {
+    color: #f9f9f9;
+    text-decoration: underline;
+}
