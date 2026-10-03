@@ -14,7 +14,7 @@ declare module "@react-three/fiber" {
 
 const CARD_WIDTH = 1.6
 const CARD_HEIGHT = 1
-const CARD_DEPTH = 0.07
+const CARD_DEPTH = 0.03
 const CARD_RADIUS = 0.06
 
 // половина переворота в секундах: карта встаёт ребром, меняет рисунок и возвращается

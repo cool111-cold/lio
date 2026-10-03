@@ -23,6 +23,9 @@ import flagIcon from './icons/flag.svg'
 import reviewsIcon from './icons/reviews.svg'
 import wifiIcon from './icons/wifi.svg'
 import saveContactIcon from './icons/save-contact.svg'
+import designRating24 from '../../assets/img/24.png'
+import designRating25 from '../../assets/img/25.png'
+import designRating26 from '../../assets/img/26.png'
 import designRating from '../../assets/img/2.png'
 import designSocial from '../../assets/img/6.jpg'
 import designLimited from '../../assets/img/7.jpg'
@@ -88,32 +91,32 @@ const CARD_DESIGNS: CardDesign[] = [
         id: 'rating',
         title: 'Оставьте оценку',
         description: 'Гость сразу попадает на форму отзыва в Яндекс.Картах или 2gis',
-        image: designRating,
+        image: designRating24,
     },
     {
         id: 'social',
         title: 'Мы в соц сетях',
         description: 'Собирает подписчиков во все соцсети магазина в один клик',
-        image: designSocial,
+        image: designRating25,
     },
     {
         id: 'limited',
         title: 'Лимитированная',
         description: 'Нумерованная серия с необычным дизайном для коллекционеров',
-        image: designLimited,
+        image: designRating26,
     },
     {
         id: 'cute',
         title: 'Мимими',
         description: 'Милый минималистичный дизайн для личного профиля',
-        image: designCute,
+        image: designRating,
     },
-    {
-        id: 'custom',
-        title: 'Кастом',
-        description: 'Загрузите логотип и цвета бренда — сделаем индивидуальный макет',
-        image: designCustom,
-    },
+    // {
+    //     id: 'custom',
+    //     title: 'Кастом',
+    //     description: 'Загрузите логотип и цвета бренда — сделаем индивидуальный макет',
+    //     image: designCustom,
+    // },
 ]
 
 const STEPS_AUTOPLAY_MS = 5000

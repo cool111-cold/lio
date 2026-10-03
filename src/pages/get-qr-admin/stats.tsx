@@ -234,7 +234,7 @@ export const GetQrAdminStatsPage = ({token, onUnauthorized}: GetQrAdminStatsPage
                                 </div>
                                 {linkRows.length === 0 && <Text size="s" color="lightGray">{loading ? 'Загрузка…' : 'Ссылок пока нет'}</Text>}
                                 {linkRows.map((link) => (
-                                    <div className="admin-stats-row" key={link.id}>
+                                    <div className="admin-stats-row" key={link.id} onClick={() => window.location.replace(link.link)}>
                                         <div className="admin-stats-row-top">
                                             <div className="admin-stats-row-label">
                                                 <img className="admin-stats-row-icon" src={resolveIcon(link.icon)} alt="" />
